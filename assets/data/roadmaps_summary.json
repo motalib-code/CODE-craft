@@ -1,0 +1,722 @@
+[
+  {
+    "id": "ai-agents",
+    "name": "Ai Agents",
+    "topics_count": 97,
+    "sample_topics": [
+      "Basic Backend Development",
+      "Git and Terminal Usage",
+      "REST API Knowledge",
+      "Transformer Models and LLMs",
+      "Tokenization"
+    ]
+  },
+  {
+    "id": "ai-data-scientist",
+    "name": "Ai Data Scientist",
+    "topics_count": 8,
+    "sample_topics": [
+      "Mathematics",
+      "Statistics",
+      "Econometrics",
+      "Coding",
+      "Exploratory Data Analysis"
+    ]
+  },
+  {
+    "id": "ai-engineer",
+    "name": "Ai Engineer",
+    "topics_count": 116,
+    "sample_topics": [
+      "Introduction",
+      "What is an AI Engineer?",
+      "AI Engineer vs ML Engineer",
+      "LLMs",
+      "Inference"
+    ]
+  },
+  {
+    "id": "ai-red-teaming",
+    "name": "Ai Red Teaming",
+    "topics_count": 64,
+    "sample_topics": [
+      "AI Security Fundamentals",
+      "Why Red Team AI Systems?",
+      "Introduction",
+      "Ethical Considerations",
+      "Role of Red Teams"
+    ]
+  },
+  {
+    "id": "android",
+    "name": "Android",
+    "topics_count": 105,
+    "sample_topics": [
+      "Pick a Language",
+      "Kotlin",
+      "Java",
+      "The Fundamentals",
+      "Development IDE"
+    ]
+  },
+  {
+    "id": "angular",
+    "name": "Angular",
+    "topics_count": 159,
+    "sample_topics": [
+      "Introduction to Angular",
+      "Angular Architecture",
+      "Setting up a New Project",
+      "Angular and History",
+      "Components"
+    ]
+  },
+  {
+    "id": "api-design",
+    "name": "Api Design",
+    "topics_count": 84,
+    "sample_topics": [
+      "Learn the Basics",
+      "What are APIs",
+      "HTTP",
+      "HTTP Versions",
+      "HTTP Methods"
+    ]
+  },
+  {
+    "id": "aspnet-core",
+    "name": "Aspnet Core",
+    "topics_count": 146,
+    "sample_topics": [
+      "General Development Skills",
+      "C#",
+      ".NET",
+      ".NET CLI",
+      "Learn the Basics of C#"
+    ]
+  },
+  {
+    "id": "aws",
+    "name": "Aws",
+    "topics_count": 101,
+    "sample_topics": [
+      "Introduction",
+      "What is Cloud Computing?",
+      "IaaS vs PaaS vs SaaS",
+      "Public vs Private vs Hybrid Cloud",
+      "AWS Global Infrastructure"
+    ]
+  },
+  {
+    "id": "backend",
+    "name": "Backend",
+    "topics_count": 137,
+    "sample_topics": [
+      "Search Engines",
+      "Design and Development Principles",
+      "Learn about APIs",
+      "Internet",
+      "Rust"
+    ]
+  },
+  {
+    "id": "bi-analyst",
+    "name": "Bi Analyst",
+    "topics_count": 203,
+    "sample_topics": [
+      "What is BI?",
+      "Skills",
+      "Why BI Matters?",
+      "Responsibilities",
+      "BI Analyst vs Other Roles"
+    ]
+  },
+  {
+    "id": "blockchain",
+    "name": "Blockchain",
+    "topics_count": 124,
+    "sample_topics": [
+      "Basic Blockchain Knowledge",
+      "Blockchain Structure",
+      "Basic Blockchain Operations",
+      "Applications and Uses",
+      "What is Blockchain"
+    ]
+  },
+  {
+    "id": "cloudflare",
+    "name": "Cloudflare",
+    "topics_count": 97,
+    "sample_topics": [
+      "JavaScript Fundamentals",
+      "Basic Command-line Knowledge",
+      "HTTP and Web Protocols",
+      "Git Basics",
+      "Node.js and NPM"
+    ]
+  },
+  {
+    "id": "code-review",
+    "name": "Code Review",
+    "topics_count": 0,
+    "sample_topics": []
+  },
+  {
+    "id": "computer-science",
+    "name": "Computer Science",
+    "topics_count": 187,
+    "sample_topics": [
+      "Pick a Language",
+      "Python",
+      "Go",
+      "C#",
+      "Rust"
+    ]
+  },
+  {
+    "id": "cpp",
+    "name": "Cpp",
+    "topics_count": 127,
+    "sample_topics": [
+      "Diamond Inheritance",
+      "Forward Declaration",
+      "Introduction to Language",
+      "What is C++?",
+      "Why use C++"
+    ]
+  },
+  {
+    "id": "cyber-security",
+    "name": "Cyber Security",
+    "topics_count": 301,
+    "sample_topics": [
+      "Fundamental IT Skills",
+      "Computer Hardware Components",
+      "Connection Types and their function",
+      "OS-Independent Troubleshooting",
+      "Understand Basics of Popular Suites"
+    ]
+  },
+  {
+    "id": "data-analyst",
+    "name": "Data Analyst",
+    "topics_count": 106,
+    "sample_topics": [
+      "Introduction",
+      "What is Data Analytics",
+      "Types of Data Analytics",
+      "Descriptive Analytics",
+      "Diagnostic Analytics"
+    ]
+  },
+  {
+    "id": "data-engineer",
+    "name": "Data Engineer",
+    "topics_count": 187,
+    "sample_topics": [
+      "Introduction",
+      "What is Data Engineering?",
+      "Data Engineering vs Data Science",
+      "Skills and Responsibilities",
+      "Data Engineering Lifecycle"
+    ]
+  },
+  {
+    "id": "datastructures-and-algorithms",
+    "name": "Datastructures And Algorithms",
+    "topics_count": 107,
+    "sample_topics": [
+      "Pick a Language",
+      "JavaScript",
+      "Java",
+      "Go",
+      "C#"
+    ]
+  },
+  {
+    "id": "design-system",
+    "name": "Design System",
+    "topics_count": 124,
+    "sample_topics": [
+      "Understand he Basics",
+      "What is a Design System?",
+      "Need of Design System",
+      "Design System vs Component Library",
+      "What is Atomic Design"
+    ]
+  },
+  {
+    "id": "devops",
+    "name": "Devops",
+    "topics_count": 134,
+    "sample_topics": [
+      "Learn a Programming Language",
+      "Python",
+      "Ruby",
+      "Go",
+      "Rust"
+    ]
+  },
+  {
+    "id": "devrel",
+    "name": "Devrel",
+    "topics_count": 142,
+    "sample_topics": [
+      "What is DevRel?",
+      "History and Evolution",
+      "Developer Experience",
+      "Developer Journey",
+      "Developer Marketing"
+    ]
+  },
+  {
+    "id": "docker",
+    "name": "Docker",
+    "topics_count": 0,
+    "sample_topics": []
+  },
+  {
+    "id": "engineering-manager",
+    "name": "Engineering Manager",
+    "topics_count": 134,
+    "sample_topics": [
+      "What is Engineering Management?",
+      "EM vs Tech Lead vs IC",
+      "People",
+      "Product",
+      "Process"
+    ]
+  },
+  {
+    "id": "flutter",
+    "name": "Flutter",
+    "topics_count": 108,
+    "sample_topics": [
+      "Basics of Dart",
+      "Dart Pad",
+      "Variables",
+      "Built-in Types",
+      "Functions"
+    ]
+  },
+  {
+    "id": "frontend",
+    "name": "Frontend",
+    "topics_count": 115,
+    "sample_topics": [
+      "Internet",
+      "How does the internet work?",
+      "What is HTTP?",
+      "What is Domain Name?",
+      "What is hosting?"
+    ]
+  },
+  {
+    "id": "full-stack",
+    "name": "Full Stack",
+    "topics_count": 37,
+    "sample_topics": [
+      "HTML",
+      "CSS",
+      "JavaScript",
+      "npm",
+      "Checkpoint - Static Webpages"
+    ]
+  },
+  {
+    "id": "game-developer",
+    "name": "Game Developer",
+    "topics_count": 144,
+    "sample_topics": [
+      "Client Side Development",
+      "Game Mathematics",
+      "Linear Algebra",
+      "Vector",
+      "Matrix"
+    ]
+  },
+  {
+    "id": "git-github",
+    "name": "Git Github",
+    "topics_count": 155,
+    "sample_topics": [
+      "Learn the Basics",
+      "What is Version Control?",
+      "Why use Version Control?",
+      "Git vs Other VCS",
+      "Installing Git Locally"
+    ]
+  },
+  {
+    "id": "golang",
+    "name": "Golang",
+    "topics_count": 0,
+    "sample_topics": []
+  },
+  {
+    "id": "graphql",
+    "name": "Graphql",
+    "topics_count": 65,
+    "sample_topics": [
+      "Introduction",
+      "What is GraphQL",
+      "Problems GraphQL Solves",
+      "Thinking in Graphs",
+      "GraphQL Queries"
+    ]
+  },
+  {
+    "id": "ios",
+    "name": "Ios",
+    "topics_count": 169,
+    "sample_topics": [
+      "Swift (Recommended)",
+      "History and Why Swift?",
+      "Benefits over Objective-C",
+      "Swift Basics",
+      "Objective-C"
+    ]
+  },
+  {
+    "id": "java",
+    "name": "Java",
+    "topics_count": 86,
+    "sample_topics": [
+      "Learn the Basics",
+      "Basic Syntax",
+      "Data Types",
+      "Conditionals",
+      "Arrays "
+    ]
+  },
+  {
+    "id": "javascript",
+    "name": "Javascript",
+    "topics_count": 126,
+    "sample_topics": [
+      "Introduction to JavaScript",
+      "What is JavaScript",
+      "History of JavaScript",
+      "JavaScript Versions",
+      "How to run JavaScript"
+    ]
+  },
+  {
+    "id": "kubernetes",
+    "name": "Kubernetes",
+    "topics_count": 67,
+    "sample_topics": [
+      "Introduction",
+      "Overview of Kubernetes",
+      "Why use Kubernetes?",
+      "Key Concepts and Terminologies",
+      "Kubernetes Alternatives"
+    ]
+  },
+  {
+    "id": "linux",
+    "name": "Linux",
+    "topics_count": 102,
+    "sample_topics": [
+      "Navigation Basics",
+      "Basic Commands",
+      "Moving Files / Directories",
+      "Creating & Deleting Files / Dirs",
+      "Directory Hierarchy Overview"
+    ]
+  },
+  {
+    "id": "machine-learning",
+    "name": "Machine Learning",
+    "topics_count": 150,
+    "sample_topics": [
+      "Introduction",
+      "ML Engineer vs AI Engineer",
+      "Skills and Responsibilities",
+      "What is an ML Engineer?",
+      "Linear Algebra"
+    ]
+  },
+  {
+    "id": "mlops",
+    "name": "Mlops",
+    "topics_count": 32,
+    "sample_topics": [
+      "Programming Fundamentals",
+      "Python",
+      "Go",
+      "Bash",
+      "Version Control Systems"
+    ]
+  },
+  {
+    "id": "mongodb",
+    "name": "Mongodb",
+    "topics_count": 106,
+    "sample_topics": [
+      "MongoDB Basics",
+      "SQL vs NoSQL",
+      "What is MongoDB?",
+      "When to use MongoDB?",
+      "What is MongoDB Atlas?"
+    ]
+  },
+  {
+    "id": "nodejs",
+    "name": "Nodejs",
+    "topics_count": 113,
+    "sample_topics": [
+      "Introduction to Node.js",
+      "What is Node.js?",
+      "Why use Node.js?",
+      "History of Node.js",
+      "Node.js vs Browser"
+    ]
+  },
+  {
+    "id": "php",
+    "name": "Php",
+    "topics_count": 120,
+    "sample_topics": [
+      "Introduction to PHP",
+      "Evolution and History",
+      "PHP Versions and Features",
+      "What is PHP?",
+      "Installing PHP"
+    ]
+  },
+  {
+    "id": "postgresql-dba",
+    "name": "Postgresql Dba",
+    "topics_count": 170,
+    "sample_topics": [
+      "Introduction",
+      "What are Relational Databases?",
+      "RDBMS Benefits and Limitations",
+      "PostgreSQL vs Other RDBMS",
+      "PostgreSQL vs NoSQL Databases"
+    ]
+  },
+  {
+    "id": "product-manager",
+    "name": "Product Manager",
+    "topics_count": 172,
+    "sample_topics": [
+      "What is Product Management?",
+      "Product vs Project Management",
+      "Roles and Responsibilities",
+      "Key Skills",
+      "Product Development Lifecycle"
+    ]
+  },
+  {
+    "id": "prompt-engineering",
+    "name": "Prompt Engineering",
+    "topics_count": 0,
+    "sample_topics": []
+  },
+  {
+    "id": "python",
+    "name": "Python",
+    "topics_count": 84,
+    "sample_topics": [
+      "Learn the Basics",
+      "Basic Syntax",
+      "Variables and Data Types",
+      "Conditionals",
+      "Type Casting"
+    ]
+  },
+  {
+    "id": "qa",
+    "name": "Qa",
+    "topics_count": 139,
+    "sample_topics": [
+      "Learn the Fundamentals",
+      "Test Oracles",
+      "Test Prioritization",
+      "Manage your Testing",
+      "qTest"
+    ]
+  },
+  {
+    "id": "react",
+    "name": "React",
+    "topics_count": 80,
+    "sample_topics": [
+      "CLI Tools",
+      "Vite",
+      "Components",
+      "Functional Components",
+      "JSX"
+    ]
+  },
+  {
+    "id": "react-native",
+    "name": "React Native",
+    "topics_count": 94,
+    "sample_topics": [
+      "Introduction",
+      "What is React Native?",
+      "Why use React Native?",
+      "React Native Alternatives",
+      "Learn the Pre-requisites"
+    ]
+  },
+  {
+    "id": "redis",
+    "name": "Redis",
+    "topics_count": 162,
+    "sample_topics": [
+      "What is Redis?",
+      "In-memory Data Structure Store",
+      "Key-value Database",
+      "Cache",
+      "Message Broker"
+    ]
+  },
+  {
+    "id": "rust",
+    "name": "Rust",
+    "topics_count": 120,
+    "sample_topics": [
+      "Introduction",
+      "What is Rust?",
+      "Why use Rust?",
+      "Installing Rust and Cargo",
+      "IDEs and Rust Toolchains"
+    ]
+  },
+  {
+    "id": "server-side-game-developer",
+    "name": "Server Side Game Developer",
+    "topics_count": 156,
+    "sample_topics": [
+      "Server-Side Development",
+      "TCP",
+      "Checksum",
+      "Segment Structure",
+      "Connection"
+    ]
+  },
+  {
+    "id": "software-architect",
+    "name": "Software Architect",
+    "topics_count": 113,
+    "sample_topics": [
+      "Understand the Basics",
+      "What is Software Architecture",
+      "What is a Software Architect",
+      "Levels of Architecture",
+      "Application Architecture"
+    ]
+  },
+  {
+    "id": "software-design-architecture",
+    "name": "Software Design Architecture",
+    "topics_count": 95,
+    "sample_topics": [
+      "Clean Code",
+      "Programming Paradigms",
+      "Object Oriented Programming",
+      "Design Principles",
+      "Design Patterns"
+    ]
+  },
+  {
+    "id": "spring-boot",
+    "name": "Spring Boot",
+    "topics_count": 46,
+    "sample_topics": [
+      "Introduction",
+      "Configuration",
+      "Dependency Injection",
+      "Spring IOC",
+      "Spring AOP"
+    ]
+  },
+  {
+    "id": "sql",
+    "name": "Sql",
+    "topics_count": 112,
+    "sample_topics": [
+      "What are Relational Databases?",
+      "RDBMS Benefits and Limitations",
+      "Learn the Basics",
+      "SQL vs NoSQL Databases",
+      "Basic SQL Syntax"
+    ]
+  },
+  {
+    "id": "system-design",
+    "name": "System Design",
+    "topics_count": 147,
+    "sample_topics": [
+      "Introduction",
+      "What is System Design?",
+      "How to approach System Design?",
+      "Performance vs Scalability",
+      "Latency vs Throughput"
+    ]
+  },
+  {
+    "id": "technical-writer",
+    "name": "Technical Writer",
+    "topics_count": 84,
+    "sample_topics": [
+      "Introduction",
+      "Who is a Technical Writer?",
+      "What is Technical Writing?",
+      "Role of Technical Writers in Organizations",
+      "Forms of Technical Writing"
+    ]
+  },
+  {
+    "id": "terraform",
+    "name": "Terraform",
+    "topics_count": 110,
+    "sample_topics": [
+      "Introduction",
+      "What is Terraform?",
+      "Usecases and Benefits",
+      "Installing Terraform",
+      "CaC vs IaC"
+    ]
+  },
+  {
+    "id": "typescript",
+    "name": "Typescript",
+    "topics_count": 93,
+    "sample_topics": [
+      "Introduction to TypeScript",
+      "TypeScript vs JavaScript",
+      "TS and JS Interoperability",
+      "Installation and Configuration",
+      "tsconfig.json"
+    ]
+  },
+  {
+    "id": "ux-design",
+    "name": "Ux Design",
+    "topics_count": 94,
+    "sample_topics": [
+      "Human Decision Making",
+      "Nudge Theory",
+      "Persuasive Technology",
+      "Behavior Design",
+      "Behavioral Science"
+    ]
+  },
+  {
+    "id": "vue",
+    "name": "Vue",
+    "topics_count": 84,
+    "sample_topics": [
+      "Components",
+      "create-vue",
+      "Single File Components",
+      "Component Registration",
+      "Props"
+    ]
+  }
+]

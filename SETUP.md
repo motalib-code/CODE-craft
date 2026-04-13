@@ -18,11 +18,11 @@ A **production-ready Flutter app** that works on:
 7. **Mock Interviews**: AI-powered HR/Technical/System Design interviews
 8. **Profile**: Stats heatmap, badges, resume generator, swag store
 
-### API Keys Already Integrated:
-- **Gemini**: `YOUR_GEMINI_API_KEY` ✅
-- **Groq** (backup): `YOUR_GROQ_API_KEY` ✅
-- **Cohere** (search): `YOUR_COHERE_API_KEY` ✅
-- **YouTube**: `YOUR_YOUTUBE_API_KEY` ✅
+### API Keys (Setup Required):
+- **Gemini**: `YOUR_GEMINI_API_KEY`
+- **Groq** (backup): `YOUR_GROQ_API_KEY`
+- **Cohere** (search): `YOUR_COHERE_API_KEY`
+- **YouTube**: `YOUR_YOUTUBE_API_KEY`
 
 ---
 

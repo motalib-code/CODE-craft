@@ -65,4 +65,14 @@ class RoadmapNotifier extends StateNotifier<RoadmapState> {
       nodes: state.nodes,
     );
   }
+
+  void loadRoadmap(String roadmapName) {
+    // In a real app, this would fetch from an API or local JSON
+    // For now, we'll simulate loading by updating the selected track and resetting nodes
+    state = RoadmapState(
+      selectedTrack: roadmapName,
+      nodes: state.nodes, // Keeping existing nodes for demo purposes
+      isLoading: false,
+    );
+  }
 }

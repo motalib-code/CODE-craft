@@ -91,13 +91,13 @@ Background:  #0D0B1F (Dark)
 
 ---
 
-## 🔑 API Keys (Already Integrated)
+## 🔑 API Keys (Setup Required)
 
 ```
-Gemini:   YOUR_GEMINI_API_KEY ✅
-Groq:     YOUR_GROQ_API_KEY ✅
-Cohere:   YOUR_COHERE_API_KEY ✅
-YouTube:  YOUR_YOUTUBE_API_KEY ✅
+Gemini:   YOUR_GEMINI_API_KEY
+Groq:     YOUR_GROQ_API_KEY
+Cohere:   YOUR_COHERE_API_KEY
+YouTube:  YOUR_YOUTUBE_API_KEY
 ```
 
 **Only Firebase needs setup** (see SETUP.md)

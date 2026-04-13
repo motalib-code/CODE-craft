@@ -10,6 +10,7 @@ import '../../features/home/screens/home_screen.dart';
 import '../../features/roadmap/screens/roadmap_screen.dart';
 import '../../features/roadmap/screens/topic_detail_screen.dart';
 import '../../features/roadmap/screens/syllabus_parser_screen.dart';
+import '../../features/roadmap/screens/roadmap_explorer_screen.dart';
 import '../../features/practice/screens/practice_screen.dart';
 import '../../features/practice/screens/code_editor_screen.dart';
 import '../../features/projects/screens/projects_screen.dart';
@@ -139,6 +140,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/resume',
         builder: (context, state) => const ResumeScreen(),
+      ),
+      GoRoute(
+        path: '/roadmap/explorer',
+        builder: (context, state) => const RoadmapExplorerScreen(),
       ),
       GoRoute(
         path: '/camera-scanner',

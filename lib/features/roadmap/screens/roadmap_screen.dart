@@ -42,11 +42,19 @@ class RoadmapScreen extends ConsumerWidget {
                             style: AppTextStyles.body),
                       ],
                     ),
-                    // Syllabus Parser Button
-                    IconButton(
-                      icon: const Icon(Icons.description_outlined, color: AppColors.purple),
-                      tooltip: 'Upload Syllabus',
-                      onPressed: () => context.push('/roadmap/syllabus-parser'),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.explore_outlined, color: AppColors.purple),
+                          tooltip: 'Explore All Roadmaps',
+                          onPressed: () => context.push('/roadmap/explorer'),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.description_outlined, color: AppColors.purple),
+                          tooltip: 'Upload Syllabus',
+                          onPressed: () => context.push('/roadmap/syllabus-parser'),
+                        ),
+                      ],
                     ),
                   ],
                 ),

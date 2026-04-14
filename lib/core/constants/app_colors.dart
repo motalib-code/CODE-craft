@@ -12,11 +12,13 @@ class AppColors {
   // ── Brand ────────────────────────────────────────
   static const Color purple = Color(0xFF7C3AED);
   static const Color blue = Color(0xFF2563EB);
+  static const Color cyan = Color(0xFF06B6D4);
   static const Color green = Color(0xFF10B981);
+  static const Color mint = Color(0xFF6EE7B7);
   static const Color pink = Color(0xFFEC4899);
   static const Color orange = Color(0xFFF59E0B);
   static const Color red = Color(0xFFEF4444);
-  static const Color gold = Color(0xFFFCD34D);
+  static const Color gold = Color(0xFFFFC107);
 
   // ── Text ─────────────────────────────────────────
   static const Color textPrimary = Color(0xFFF8F8FF);
@@ -33,18 +35,26 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static const LinearGradient gradBlueCyan = LinearGradient(
+    colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
+  );
+
   static const LinearGradient gradGreenBlue = LinearGradient(
     colors: [Color(0xFF10B981), Color(0xFF2563EB)],
   );
+
+  static const LinearGradient gradGreenMint = LinearGradient(
+    colors: [Color(0xFF059669), Color(0xFF34D399)],
+  );
+
   static const LinearGradient gradPinkPurple = LinearGradient(
     colors: [Color(0xFFEC4899), Color(0xFF7C3AED)],
   );
+
   static const LinearGradient gradBg = LinearGradient(
     colors: [Color(0xFF0D0B1F), Color(0xFF13111E)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-  );
-  static const LinearGradient gradOrangeRed = LinearGradient(
-    colors: [Color(0xFFF59E0B), Color(0xFFEF4444)],
   );
 }

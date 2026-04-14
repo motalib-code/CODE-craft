@@ -5,10 +5,10 @@ class ApiKeys {
   static const String googleWebClientId = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 
   // Gemini API Key
-  static const String geminiApiKey = "YOUR_GEMINI_API_KEY";
+  static const String geminiApiKey = "AIzaSyAk-T9pQmq3M1erUS9S5E7BDf31aLiyQuI";
 
   // YouTube Data API Key
-  static const String youtubeApiKey = "YOUR_YOUTUBE_API_KEY";
+  static const String youtubeApiKey = "AIzaSyCN6uId7lR5SicFnSL-s8cDqpMzuPAtRHo";
   
   // Groq API Key
   static const String groqApiKey = "YOUR_GROQ_API_KEY";

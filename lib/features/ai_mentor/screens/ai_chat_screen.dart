@@ -19,15 +19,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final _msgCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
 
-  static const _suggestions = [
-    '🧠 Explain binary search in simple terms',
-    '🔍 What is time complexity of merge sort?',
-    '💡 How to solve Two Sum problem?',
-    '📚 Difference between stack and queue?',
-    '🐛 Help me debug my linked list code',
-    '🎯 Tips for coding interviews at Google',
-  ];
-
   void _send([String? text]) {
     final message = text ?? _msgCtrl.text.trim();
     if (message.isEmpty) return;
@@ -61,308 +52,260 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: AppBar(
-        backgroundColor: AppColors.bg,
-        title: Row(
+      body: SafeArea(
+        child: Column(
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                gradient: AppColors.gradPurpleBlue,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(
-                child: Text('🤖', style: TextStyle(fontSize: 16)),
+            // ── Custom App Bar ────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                children: [
+                  Stack(
+                    children: [
+                      const CircleAvatar(
+                        radius: 20,
+                        backgroundImage: NetworkImage('https://ui-avatars.com/api/?name=AI&background=9333EA&color=fff'),
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: AppColors.green,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.bg, width: 2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('CodeCraft AI', style: AppTextStyles.h2.copyWith(fontSize: 18)),
+                      Text('ONLINE • NEURAL ENGINE V4.2', 
+                        style: AppTextStyles.small.copyWith(
+                          color: AppColors.green, 
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                          fontSize: 8,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.bgSurface,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.settings, color: Colors.white, size: 20),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('CodeCraft AI', style: AppTextStyles.h3.copyWith(fontSize: 14)),
-                Text(
-                  chatState.isTyping ? 'Typing...' : 'Online',
-                  style: AppTextStyles.small.copyWith(
-                    color: chatState.isTyping ? AppColors.orange : AppColors.green,
-                    fontSize: 10,
+
+            // ── Chat Body ────────────────────────────
+            Expanded(
+              child: ListView(
+                controller: _scrollCtrl,
+                padding: const EdgeInsets.all(20),
+                children: [
+                  // System Status Message
+                  FadeInUp(
+                    child: GlassCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSystemLine('connection_established', 'true'),
+                          _buildSystemLine('greeting', '"Welcome back, Lead Dev."'),
+                          _buildSystemLine('status', '"I\'ve analyzed your latest repository. Ready to refactor that async middleware?"'),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'async function initSystem() {\n  try {\n    const nexus = await CodeCraft.connect();\n    // Handshake in progress...\n    return nexus.ready;\n  } catch (err) {\n    console.error(`ERR: \${err}`);\n  }\n}',
+                              style: AppTextStyles.code.copyWith(fontSize: 12, height: 1.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text('AI MENTOR • 09:41 AM', style: AppTextStyles.small.copyWith(fontSize: 8, color: AppColors.textHint)),
+                  const SizedBox(height: 24),
+
+                  // User Message
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        FadeInRight(
+                          child: Container(
+                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.gradPurpleBlue,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                                bottomLeft: Radius.circular(16),
+                                bottomRight: Radius.circular(4),
+                              ),
+                            ),
+                            child: Text(
+                              'Can you explain why the useEffect hook is causing an infinite loop in my dashboard component?',
+                              style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text('YOU • 09:42 AM', style: AppTextStyles.small.copyWith(fontSize: 8, color: AppColors.textHint)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // AI Response
+                  FadeInUp(
+                    child: GlassCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'The infinite loop typically occurs because you\'re updating a state variable inside useEffect that is also listed in its dependency array.',
+                            style: AppTextStyles.body,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildCodeCompareCard(),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.green.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.green.withOpacity(0.2)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.tips_and_updates, color: AppColors.green, size: 18),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'PRO TIP: Always use a functional update if you depend on previous state.',
+                                    style: AppTextStyles.small.copyWith(color: AppColors.green, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('AI MENTOR • 09:43 AM', style: AppTextStyles.small.copyWith(fontSize: 8, color: AppColors.textHint)),
+                  const SizedBox(height: 32),
+
+                  // "Neural Core Processing..." Status
+                  Row(
+                    children: [
+                      _buildDot(0),
+                      _buildDot(1),
+                      _buildDot(2),
+                      const SizedBox(width: 10),
+                      Text('NEURAL CORE IS PROCESSING...', style: AppTextStyles.small.copyWith(letterSpacing: 1, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Suggestions
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildSuggestionChip('Explain Redux vs Context'),
+                        _buildSuggestionChip('Debug my React API call'),
+                        _buildSuggestionChip('Best practices for hooks'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.camera_alt_outlined, color: AppColors.textSecondary),
-            onPressed: () => Navigator.pushNamed(context, '/camera-scanner'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: AppColors.textSecondary),
-            onPressed: () {
-              ref.read(aiMentorNotifierProvider.notifier).clearChat();
-            },
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          // Messages
-          Expanded(
-            child: chatState.messages.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    controller: _scrollCtrl,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: chatState.messages.length +
-                        (chatState.isTyping ? 1 : 0),
-                    itemBuilder: (_, i) {
-                      if (i == chatState.messages.length) {
-                        return _buildTypingIndicator();
-                      }
-                      final msg = chatState.messages[i];
-                      final isUser = msg['role'] == 'user';
-                      return FadeInUp(
-                        duration: const Duration(milliseconds: 200),
-                        child: _ChatBubble(
-                          message: msg['content'] ?? '',
-                          isUser: isUser,
-                        ),
-                      );
-                    },
-                  ),
-          ),
+    );
+  }
 
-          // Input area
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            decoration: const BoxDecoration(
-              color: AppColors.bgCard,
-              border: Border(
-                top: BorderSide(color: AppColors.border),
-              ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _msgCtrl,
-                      style: const TextStyle(
-                          color: AppColors.textPrimary, fontSize: 14),
-                      maxLines: 3,
-                      minLines: 1,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _send(),
-                      decoration: InputDecoration(
-                        hintText: 'Ask me anything about coding...',
-                        hintStyle: const TextStyle(
-                            color: AppColors.textHint, fontSize: 13),
-                        filled: true,
-                        fillColor: AppColors.bgInput,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => _send(),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.gradPurpleBlue,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(Icons.send_rounded,
-                          color: Colors.white, size: 20),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+  Widget _buildSystemLine(String key, String val) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Text('> ', style: AppTextStyles.code.copyWith(color: AppColors.green, fontSize: 12)),
+          Text('$key: ', style: AppTextStyles.code.copyWith(color: AppColors.green, fontSize: 12)),
+          Text(val, style: AppTextStyles.code.copyWith(color: AppColors.blue, fontSize: 12)),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+  Widget _buildCodeCompareCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Column(
-        children: [
-          const SizedBox(height: 20),
-          FadeInDown(
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                gradient: AppColors.gradPurpleBlue,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.purple.withOpacity(0.3),
-                    blurRadius: 20,
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Text('🤖', style: TextStyle(fontSize: 36)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          FadeInDown(
-            delay: const Duration(milliseconds: 200),
-            child: GradientText(
-              text: 'Hey! I\'m CodeCraft AI 👋',
-              style: AppTextStyles.h1,
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 8),
-          FadeInDown(
-            delay: const Duration(milliseconds: 300),
-            child: Text(
-              'Your personal coding mentor. Ask me anything!',
-              style: AppTextStyles.body,
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 24),
-          FadeInUp(
-            delay: const Duration(milliseconds: 400),
-            child: Text('Try asking:', style: AppTextStyles.h3),
-          ),
-          const SizedBox(height: 12),
-          ...List.generate(_suggestions.length, (i) {
-            return FadeInUp(
-              delay: Duration(milliseconds: 450 + (i * 60)),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: GlassCard(
-                  onTap: () => _send(_suggestions[i]),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(_suggestions[i],
-                            style: AppTextStyles.body
-                                .copyWith(color: AppColors.textPrimary)),
-                      ),
-                      const Icon(Icons.arrow_forward_ios,
-                          color: AppColors.textHint, size: 14),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTypingIndicator() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          GlassCard(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(3, (i) {
-                return TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: Duration(milliseconds: 600 + (i * 200)),
-                  builder: (_, value, child) {
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: AppColors.purple.withOpacity(0.5 + value * 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                    );
-                  },
-                );
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ChatBubble extends StatelessWidget {
-  final String message;
-  final bool isUser;
-
-  const _ChatBubble({required this.message, required this.isUser});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isUser) ...[
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                gradient: AppColors.gradPurpleBlue,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(
-                child: Text('🤖', style: TextStyle(fontSize: 14)),
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                gradient: isUser ? AppColors.gradPurpleBlue : null,
-                color: isUser ? null : AppColors.bgSurface,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isUser ? 16 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 16),
-                ),
-                border: isUser
-                    ? null
-                    : Border.all(color: AppColors.border),
-              ),
-              child: SelectableText(
-                message,
-                style: AppTextStyles.body.copyWith(
-                  color: isUser ? Colors.white : AppColors.textPrimary,
-                  fontSize: 13,
-                  height: 1.5,
-                ),
-              ),
-            ),
-          ),
+          Text('// ❌ The Loop Creator', style: AppTextStyles.code.copyWith(color: AppColors.red, fontSize: 11)),
+          Text('useEffect(() => {\n  setData(val);\n}, [data]);', style: AppTextStyles.code.copyWith(fontSize: 11)),
+          const SizedBox(height: 12),
+          Text('// ✅ The Optimized Way', style: AppTextStyles.code.copyWith(color: AppColors.green, fontSize: 11)),
+          Text('useEffect(() => {\n  fetchData();\n}, []);', style: AppTextStyles.code.copyWith(fontSize: 11)),
         ],
       ),
+    );
+  }
+
+  Widget _buildDot(int i) {
+    return Container(
+      margin: const EdgeInsets.only(right: 4),
+      width: 6,
+      height: 6,
+      decoration: const BoxDecoration(color: AppColors.purple, shape: BoxShape.circle),
+    );
+  }
+
+  Widget _buildSuggestionChip(String label) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.bgSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Text(label, style: AppTextStyles.small.copyWith(fontWeight: FontWeight.bold)),
     );
   }
 }

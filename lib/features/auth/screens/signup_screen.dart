@@ -65,7 +65,23 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 20),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      ref.read(authNotifierProvider.notifier).setGuestMode(true);
+                      context.go('/home');
+                    },
+                    child: Text(
+                      'Skip →',
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textHint,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 FadeInDown(
                   child: GradientText(
                     text: 'Join CodeCraft',

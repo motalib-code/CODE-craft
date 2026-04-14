@@ -8,10 +8,9 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_text.dart';
 import '../../../core/widgets/gradient_button.dart';
-import '../../../core/widgets/coin_badge.dart';
+import '../../../core/widgets/points_badge.dart';
 import '../../../core/utils/helpers.dart';
 import '../../auth/notifiers/auth_notifier.dart';
-import '../../../models/badge_model.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -40,432 +39,375 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget build(BuildContext context) {
     final userData = ref.watch(userDataProvider);
     final user = userData.value;
-    final name = user?.name ?? 'Coder';
-    final college = user?.college ?? 'Unknown College';
-    final xp = user?.xp ?? 12400;
-    final coins = user?.coins ?? 1200;
-    final solved = user?.problemsSolved ?? 147;
-    final streak = user?.streak ?? 15;
-    final level = user?.currentLevel ?? 12;
+    final name = user?.name ?? 'Rahul Sharma';
+    final handle = '@rahul_codes';
+    final college = 'IIT Bombay';
+    final xp = '12.4k';
 
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: NestedScrollView(
-          headerSliverBuilder: (_, __) => [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    // Avatar + name
-                    FadeInDown(
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 80,
-                            height: 80,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // ── Header Section ────────────────────────
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                // Background Nebula Effect
+                Container(
+                  height: 220,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                      image: NetworkImage('https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=800&q=80'),
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(AppColors.bg, BlendMode.multiply),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -50,
+                  child: FadeInDown(
+                    child: Stack(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.mint, width: 2),
+                          ),
+                          child: const CircleAvatar(
+                            radius: 50,
+                            backgroundImage: NetworkImage('https://ui-avatars.com/api/?name=Rahul+Sharma&background=7C3AED&color=fff'),
+                          ),
+                        ),
+                        Positioned(
+                          right: 8,
+                          bottom: 8,
+                          child: Container(
+                            width: 20,
+                            height: 20,
                             decoration: BoxDecoration(
-                              gradient: AppColors.gradPurpleBlue,
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.purple.withOpacity(0.3),
-                                  blurRadius: 20,
-                                ),
-                              ],
+                              color: AppColors.green,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.bg, width: 3),
                             ),
-                            child: Center(
-                              child: Text(
-                                Helpers.getInitials(name),
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w700),
+                            child: const Center(
+                              child: Text('6', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Top Nav Buttons
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('CodeCraft', style: AppTextStyles.h2.copyWith(color: AppColors.blue)),
+                        const PointsBadge(points: '1.2k', icon: Icons.bolt),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 60),
+
+            // ── User Details ──────────────────────────
+            FadeInUp(
+              child: Column(
+                children: [
+                  Text(name, style: AppTextStyles.display.copyWith(fontSize: 28)),
+                  Text(handle, style: AppTextStyles.body.copyWith(color: AppColors.textHint)),
+                  const SizedBox(height: 24),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GradientButton(
+                          label: 'Community',
+                          onTap: () => context.push('/community'),
+                        ),
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: () => context.push('/offline'),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.bgSurface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: const Icon(Icons.cloud_download_outlined, color: Colors.white, size: 20),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.bgSurface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Icon(Icons.share_outlined, color: Colors.white, size: 20),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        style: AppTextStyles.body.copyWith(height: 1.5),
+                        children: [
+                          const TextSpan(text: '3rd Year @ '),
+                          TextSpan(text: college, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                          const TextSpan(text: ' | '),
+                          TextSpan(text: 'Flutter Developer', style: TextStyle(color: AppColors.blue, fontWeight: FontWeight.bold)),
+                          const TextSpan(text: ' | Passionate about building performant cross-platform experiences and solving algorithmic challenges.'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
+
+            // ── Stats Row 1 ──────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  _BigStatCard(
+                    title: 'SOLVED',
+                    value: '147',
+                    progress: 0.7,
+                    icon: Icons.check_circle_outline,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  _BigStatCard(
+                    title: 'STREAK',
+                    value: '15',
+                    progress: 0.5,
+                    icon: Icons.local_fire_department,
+                    subtitle: '🔥 Personal Record',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  _BigStatCard(
+                    title: 'XP',
+                    value: xp,
+                    progress: 0.9,
+                    icon: Icons.military_tech_outlined,
+                    subtitle: 'Level 24 Mastermind',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // ── Learning Activity ────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text('Learning Activity', style: AppTextStyles.h2),
+                        const Spacer(),
+                        Text('Less', style: AppTextStyles.small),
+                        const SizedBox(width: 4),
+                        ...List.generate(4, (index) => Container(
+                          width: 10,
+                          height: 10,
+                          margin: const EdgeInsets.only(left: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.purple.withOpacity(0.2 + (index * 0.2)),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        )),
+                        const SizedBox(width: 4),
+                        Text('More', style: AppTextStyles.small),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _HeatmapGrid(),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // ── Skill Distribution ──────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Skill Distribution', style: AppTextStyles.h2),
+                    const SizedBox(height: 32),
+                    Center(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox(
+                            height: 200,
+                            width: 200,
+                            child: PieChart(
+                              PieChartData(
+                                sectionsSpace: 0,
+                                centerSpaceRadius: 70,
+                                sections: [
+                                  PieChartSectionData(value: 42, color: AppColors.purple, radius: 20, showTitle: false),
+                                  PieChartSectionData(value: 38, color: AppColors.blue, radius: 20, showTitle: false),
+                                  PieChartSectionData(value: 12, color: AppColors.mint, radius: 20, showTitle: false),
+                                  PieChartSectionData(value: 8, color: AppColors.bgInput, radius: 20, showTitle: false),
+                                ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 14),
-                          Text(name, style: AppTextStyles.h1),
-                          Text(college, style: AppTextStyles.body),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Column(
                             children: [
-                              GradientButton(
-                                label: 'Edit Profile',
-                                small: true,
-                                icon: Icons.edit,
-                                onTap: () {},
-                              ),
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () async {
-                                  await ref
-                                      .read(authNotifierProvider.notifier)
-                                      .signOut();
-                                  if (context.mounted) {
-                                    context.go('/auth/login');
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    border:
-                                        Border.all(color: AppColors.border),
-                                    borderRadius:
-                                        BorderRadius.circular(14),
-                                  ),
-                                  child: const Icon(Icons.logout,
-                                      color: AppColors.textSecondary,
-                                      size: 18),
-                                ),
-                              ),
+                              Text('84%', style: AppTextStyles.display.copyWith(fontSize: 32)),
+                              Text('OVERALL', style: AppTextStyles.small.copyWith(letterSpacing: 2)),
                             ],
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-
-                    // Stats row
-                    FadeInUp(
-                      delay: const Duration(milliseconds: 200),
-                      child: Row(
-                        children: [
-                          _ProfileStat(
-                              label: 'SOLVED',
-                              value: '$solved',
-                              icon: Icons.check_circle),
-                          _ProfileStat(
-                              label: 'STREAK',
-                              value: '$streak',
-                              icon: Icons.local_fire_department),
-                          _ProfileStat(
-                              label: 'XP',
-                              value: Helpers.formatNumber(xp),
-                              icon: Icons.star),
-                        ],
-                      ),
+                    const SizedBox(height: 32),
+                    const Row(
+                      children: [
+                        Expanded(child: _SkillLegendItem(color: AppColors.purple, label: 'Frontend', value: '42% mastery')),
+                        Expanded(child: _SkillLegendItem(color: AppColors.blue, label: 'Algorithms', value: '38% mastery')),
+                      ],
                     ),
                     const SizedBox(height: 12),
-
-                    // Level bar
-                    FadeInUp(
-                      delay: const Duration(milliseconds: 300),
-                      child: GlassCard(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Text('🏆', style: TextStyle(fontSize: 16)),
-                                const SizedBox(width: 6),
-                                Text('Level $level',
-                                    style: AppTextStyles.h3),
-                                const Spacer(),
-                                CoinBadge(coins: coins),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: (user?.levelProgress ?? 0.4),
-                                backgroundColor: AppColors.bgInput,
-                                valueColor: const AlwaysStoppedAnimation(
-                                    AppColors.purple),
-                                minHeight: 6,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                                'Level ${level + 1} | ${((user?.levelProgress ?? 0.4) * 100).toInt()}% complete',
-                                style: AppTextStyles.small),
-                          ],
-                        ),
-                      ),
+                    const Row(
+                      children: [
+                        Expanded(child: _SkillLegendItem(color: AppColors.mint, label: 'Architecture', value: '12% mastery')),
+                        Expanded(child: _SkillLegendItem(color: AppColors.bgInput, label: 'Others', value: '8% mastery')),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
+            const SizedBox(height: 32),
+
+            // ── Top Accomplishments ──────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Top Accomplishments', style: AppTextStyles.h2),
+                  const SizedBox(height: 16),
+                  _AccomplishmentItem(
+                    title: 'Elite Coder Award',
+                    subtitle: 'Ranked top 1% in Summer Challenge 2023',
+                    icon: Icons.verified_outlined,
+                  ),
+                  _AccomplishmentItem(
+                    title: 'Binary Conqueror',
+                    subtitle: 'Solved 50+ Hard level problems on first try',
+                    icon: Icons.image_search,
+                  ),
+                  _AccomplishmentItem(
+                    title: 'Lead Mentor',
+                    subtitle: 'Helped 200+ students in Flutter Peer Groups',
+                    icon: Icons.group_outlined,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 100),
           ],
-          body: Column(
-            children: [
-              TabBar(
-                controller: _tabCtrl,
-                indicatorColor: AppColors.purple,
-                labelColor: AppColors.textPrimary,
-                unselectedLabelColor: AppColors.textHint,
-                tabs: const [
-                  Tab(text: 'Stats'),
-                  Tab(text: 'Badges'),
-                  Tab(text: 'Resume'),
-                  Tab(text: 'Store'),
-                ],
-              ),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabCtrl,
-                  children: [
-                    _buildStatsTab(),
-                    _buildBadgesTab(),
-                    _buildResumeTab(context),
-                    _buildStoreTab(context),
-                  ],
-                ),
-              ),
-            ],
-          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Skill Distribution', style: AppTextStyles.h2),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 200,
-            child: PieChart(
-              PieChartData(
-                centerSpaceRadius: 50,
-                sections: [
-                  PieChartSectionData(
-                    value: 42,
-                    title: '42%',
-                    color: AppColors.purple,
-                    radius: 30,
-                    titleStyle: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600),
-                  ),
-                  PieChartSectionData(
-                    value: 28,
-                    title: '28%',
-                    color: AppColors.blue,
-                    radius: 30,
-                    titleStyle: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600),
-                  ),
-                  PieChartSectionData(
-                    value: 18,
-                    title: '18%',
-                    color: AppColors.green,
-                    radius: 30,
-                    titleStyle: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600),
-                  ),
-                  PieChartSectionData(
-                    value: 12,
-                    title: '12%',
-                    color: AppColors.pink,
-                    radius: 30,
-                    titleStyle: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const _LegendItem(color: AppColors.purple, label: 'Frontend', value: '42% mastery'),
-          const _LegendItem(color: AppColors.blue, label: 'Algorithms', value: '28% mastery'),
-          const _LegendItem(color: AppColors.green, label: 'Architecture', value: '18% mastery'),
-          const _LegendItem(color: AppColors.pink, label: 'Others', value: '12% mastery'),
-          const SizedBox(height: 24),
-          Text('Top Accomplishments', style: AppTextStyles.h2),
-          const SizedBox(height: 12),
-          const _AccomplishmentCard(
-              emoji: '👑',
-              title: 'Elite Coder Award',
-              desc: 'Ranked top 1% in Summer Challenge 2023'),
-          const _AccomplishmentCard(
-              emoji: '🏆',
-              title: 'Binary Conqueror',
-              desc: 'Solved 50+ hard-level problems on binary'),
-          const _AccomplishmentCard(
-              emoji: '🎓',
-              title: 'Lead Mentor',
-              desc: 'Helped 200+ students in Flutter peer group'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBadgesTab() {
-    final badges = BadgeModel.allBadges;
-    return GridView.builder(
-      padding: const EdgeInsets.all(20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: badges.length,
-      itemBuilder: (_, i) {
-        final badge = badges[i];
-        final earned = i < 4; // First 4 earned for demo
-        return FadeInUp(
-          delay: Duration(milliseconds: i * 60),
-          child: GlassCard(
-            padding: const EdgeInsets.all(10),
-            borderColor:
-                earned ? AppColors.gold.withOpacity(0.3) : AppColors.border,
-            gradient: earned
-                ? LinearGradient(colors: [
-                    AppColors.gold.withOpacity(0.08),
-                    AppColors.gold.withOpacity(0.02),
-                  ])
-                : null,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(badge.emoji,
-                    style: TextStyle(
-                        fontSize: 28,
-                        color: earned ? null : Colors.grey)),
-                const SizedBox(height: 6),
-                Text(badge.title,
-                    style:
-                        AppTextStyles.small.copyWith(fontSize: 10),
-                    textAlign: TextAlign.center,
-                    maxLines: 2),
-                if (!earned) ...[
-                  const SizedBox(height: 4),
-                  const Icon(Icons.lock, color: AppColors.textHint, size: 12),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildResumeTab(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          GlassCard(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.blue.withOpacity(0.1),
-                AppColors.purple.withOpacity(0.05),
-              ],
-            ),
-            child: Column(
-              children: [
-                const Text('📄', style: TextStyle(fontSize: 40)),
-                const SizedBox(height: 12),
-                Text('Auto-Generated Resume', style: AppTextStyles.h2),
-                const SizedBox(height: 6),
-                Text(
-                    'Based on your projects, skills, and achievements',
-                    style: AppTextStyles.body,
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                GradientButton(
-                  label: 'View Resume',
-                  icon: Icons.visibility,
-                  onTap: () => context.push('/resume'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          GlassCard(
-            child: Column(
-              children: [
-                const Text('💼', style: TextStyle(fontSize: 32)),
-                const SizedBox(height: 8),
-                Text('Mock Interview', style: AppTextStyles.h3),
-                const SizedBox(height: 8),
-                GradientButton(
-                  label: 'Start Interview',
-                  small: true,
-                  icon: Icons.mic,
-                  gradient: AppColors.gradGreenBlue,
-                  onTap: () => context.push('/mock-interview'),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStoreTab(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          GlassCard(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.gold.withOpacity(0.1),
-                AppColors.gold.withOpacity(0.02),
-              ],
-            ),
-            child: Column(
-              children: [
-                const Text('🏪', style: TextStyle(fontSize: 40)),
-                const SizedBox(height: 12),
-                Text('Swag Store', style: AppTextStyles.h2),
-                const SizedBox(height: 8),
-                const CoinBadge(coins: 1200, large: true),
-                const SizedBox(height: 16),
-                GradientButton(
-                  label: 'Browse Store',
-                  icon: Icons.shopping_bag,
-                  gradient: AppColors.gradOrangeRed,
-                  onTap: () => context.push('/store'),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
 }
 
-class _ProfileStat extends StatelessWidget {
-  final String label;
+class _BigStatCard extends StatelessWidget {
+  final String title;
   final String value;
+  final double progress;
   final IconData icon;
+  final String? subtitle;
 
-  const _ProfileStat(
-      {required this.label, required this.value, required this.icon});
+  const _BigStatCard({
+    required this.title,
+    required this.value,
+    required this.progress,
+    required this.icon,
+    this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: GlassCard(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         child: Column(
           children: [
-            Text(value,
-                style: AppTextStyles.h1.copyWith(fontSize: 20)),
-            const SizedBox(height: 2),
-            Text(label, style: AppTextStyles.small),
+            Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: AppTextStyles.small),
+                    const SizedBox(height: 4),
+                    Text(value, style: AppTextStyles.display.copyWith(fontSize: 32)),
+                  ],
+                ),
+                const Spacer(),
+                Icon(icon, color: AppColors.textHint.withOpacity(0.3), size: 48),
+              ],
+            ),
+            const SizedBox(height: 16),
+            LinearProgressIndicator(
+              value: progress,
+              backgroundColor: AppColors.bgInput,
+              valueColor: const AlwaysStoppedAnimation(AppColors.purple),
+              minHeight: 6,
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.trending_up, color: AppColors.red, size: 14),
+                  const SizedBox(width: 4),
+                  Text(subtitle!, style: AppTextStyles.small.copyWith(color: AppColors.textSecondary)),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -473,60 +415,94 @@ class _ProfileStat extends StatelessWidget {
   }
 }
 
-class _LegendItem extends StatelessWidget {
-  final Color color;
-  final String label;
-  final String value;
-
-  const _LegendItem(
-      {required this.color, required this.label, required this.value});
-
+class _HeatmapGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 8),
-          Text(label, style: AppTextStyles.body),
-          const Spacer(),
-          Text(value, style: AppTextStyles.small),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double spacing = 4;
+        final int columns = 24;
+        final double cellSize = (constraints.maxWidth - (columns - 1) * spacing) / columns;
+        
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: List.generate(columns * 2, (index) {
+            final double opacity = (index % 5) * 0.2;
+            return Container(
+              width: cellSize,
+              height: cellSize,
+              decoration: BoxDecoration(
+                color: AppColors.purple.withOpacity(opacity == 0 ? 0.1 : opacity),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }
 
-class _AccomplishmentCard extends StatelessWidget {
-  final String emoji;
-  final String title;
-  final String desc;
+class _SkillLegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+  final String value;
 
-  const _AccomplishmentCard(
-      {required this.emoji, required this.title, required this.desc});
+  const _SkillLegendItem({required this.color, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: AppTextStyles.small.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+            Text(value, style: AppTextStyles.small.copyWith(fontSize: 10)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _AccomplishmentItem extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  const _AccomplishmentItem({required this.title, required this.subtitle, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: GlassCard(
-        padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 24)),
-            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.purple.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColors.purple, size: 24),
+            ),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: AppTextStyles.h3.copyWith(fontSize: 13)),
-                  Text(desc, style: AppTextStyles.small),
+                  Text(title, style: AppTextStyles.h3),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: AppTextStyles.small),
                 ],
               ),
             ),
@@ -536,3 +512,4 @@ class _AccomplishmentCard extends StatelessWidget {
     );
   }
 }
+

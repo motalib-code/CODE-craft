@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../constants/app_colors.dart';
+import '../constants/app_text_styles.dart';
 
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -12,7 +14,7 @@ class CustomBottomNav extends StatelessWidget {
   });
 
   static const _items = [
-    _NavItem(icon: Icons.home_rounded, label: 'Home'),
+    _NavItem(icon: Icons.home_filled, label: 'Home'),
     _NavItem(icon: Icons.map_rounded, label: 'Roadmap'),
     _NavItem(icon: Icons.code_rounded, label: 'Practice'),
     _NavItem(icon: Icons.rocket_launch_rounded, label: 'Projects'),
@@ -22,70 +24,78 @@ class CustomBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(top: 8, bottom: 8),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard.withOpacity(0.95),
-        border: const Border(
-          top: BorderSide(color: AppColors.border, width: 0.5),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
+      height: 90,
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
       ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(_items.length, (i) {
-            final item = _items[i];
-            final selected = i == currentIndex;
-            return GestureDetector(
-              onTap: () => onTap(i),
-              behavior: HitTestBehavior.opaque,
-              child: SizedBox(
-                width: 64,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 4),
-                      decoration: BoxDecoration(
-                        gradient:
-                            selected ? AppColors.gradPurpleBlue : null,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Icon(
-                        item.icon,
-                        color: selected
-                            ? Colors.white
-                            : AppColors.textHint,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.label,
-                      style: TextStyle(
-                        color: selected
-                            ? AppColors.textPrimary
-                            : AppColors.textHint,
-                        fontSize: 10,
-                        fontWeight:
-                            selected ? FontWeight.w600 : FontWeight.w400,
-                      ),
-                    ),
-                  ],
+      child: Stack(
+        children: [
+          // Glass Effect
+          ClipRRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.bg.withOpacity(0.8),
+                  border: const Border(
+                    top: BorderSide(color: Colors.white12, width: 0.5),
+                  ),
                 ),
               ),
-            );
-          }),
-        ),
+            ),
+          ),
+          
+          SafeArea(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(_items.length, (i) {
+                final item = _items[i];
+                final selected = i == currentIndex;
+                return GestureDetector(
+                  onTap: () => onTap(i),
+                  behavior: HitTestBehavior.opaque,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    width: 60,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          item.icon,
+                          color: selected ? AppColors.blue : AppColors.textHint,
+                          size: selected ? 26 : 22,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.label,
+                          style: AppTextStyles.small.copyWith(
+                            color: selected ? Colors.white : AppColors.textHint,
+                            fontSize: 10,
+                            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          width: selected ? 4 : 0,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.blue,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: AppColors.blue.withOpacity(0.5), blurRadius: 4, spreadRadius: 1),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -96,3 +106,4 @@ class _NavItem {
   final String label;
   const _NavItem({required this.icon, required this.label});
 }
+

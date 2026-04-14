@@ -5,12 +5,12 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_button.dart';
-import '../../../core/widgets/diff_badge.dart';
-import '../../../core/widgets/coin_badge.dart';
+import '../../../core/widgets/points_badge.dart';
 import '../../../core/services/judge0_service.dart';
 import '../../../core/services/gemini_service.dart';
 import '../notifiers/practice_notifier.dart';
 import '../../../models/problem_model.dart';
+import '../../auth/notifiers/auth_notifier.dart';
 
 class CodeEditorScreen extends ConsumerStatefulWidget {
   final String problemId;
@@ -27,14 +27,12 @@ class _CodeEditorScreenState extends ConsumerState<CodeEditorScreen>
   final _judge0 = Judge0Service();
   final _gemini = GeminiService();
 
-  String _selectedLang = 'python';
+  String _selectedLang = 'cpp';
   String _output = '';
   bool _running = false;
-  bool _explaining = false;
-  String _explanation = '';
   ProblemModel? _problem;
 
-  final _languages = ['python', 'java', 'cpp', 'javascript', 'c'];
+  final _languages = ['cpp', 'python', 'java', 'javascript', 'c'];
 
   @override
   void initState() {
@@ -56,90 +54,6 @@ class _CodeEditorScreenState extends ConsumerState<CodeEditorScreen>
     }
   }
 
-  Future<void> _runCode() async {
-    setState(() { _running = true; _output = 'Running...'; });
-    try {
-      final result = await _judge0.runCode(
-        code: _codeCtrl.text,
-        language: _selectedLang,
-        stdin: _problem?.testCases.isNotEmpty == true
-            ? _problem!.testCases.first.input
-            : '',
-      );
-      setState(() {
-        _output = result['stdout']?.isNotEmpty == true
-            ? result['stdout']!
-            : result['stderr']?.isNotEmpty == true
-                ? '❌ Error:\n${result['stderr']}'
-                : result['compileOutput']?.isNotEmpty == true
-                    ? '❌ Compile Error:\n${result['compileOutput']}'
-                    : '✅ ${result['status']}\nTime: ${result['time']}s | Memory: ${result['memory']}KB';
-        _running = false;
-      });
-      _tabCtrl.animateTo(2); // Switch to output tab
-    } catch (e) {
-      setState(() { _output = '❌ Error: $e'; _running = false; });
-    }
-  }
-
-  Future<void> _submitCode() async {
-    if (_problem == null) return;
-    setState(() { _running = true; _output = 'Testing all cases...'; });
-
-    int passed = 0;
-    final total = _problem!.testCases.length;
-    final results = <String>[];
-
-    for (final tc in _problem!.testCases) {
-      try {
-        final result = await _judge0.runCode(
-          code: _codeCtrl.text,
-          language: _selectedLang,
-          stdin: tc.input,
-        );
-        final stdout = result['stdout']?.trim() ?? '';
-        if (stdout == tc.expectedOutput.trim()) {
-          passed++;
-          results.add('✅ Test $passed: Passed');
-        } else {
-          results
-              .add('❌ Test: Expected "${tc.expectedOutput}" got "$stdout"');
-        }
-      } catch (e) {
-        results.add('❌ Test: Error - $e');
-      }
-    }
-
-    setState(() {
-      _output = '${passed == total ? '🎉 All Passed!' : '⚠️ $passed/$total Passed'}\n\n${results.join('\n')}';
-      _running = false;
-    });
-    _tabCtrl.animateTo(2);
-  }
-
-  Future<void> _explainFailure() async {
-    if (_problem == null) return;
-    setState(() { _explaining = true; _explanation = 'Analyzing...'; });
-
-    try {
-      final explanation = await _gemini.explainFailure(
-        code: _codeCtrl.text,
-        language: _selectedLang,
-        problemTitle: _problem!.title,
-        failInput: _problem!.testCases.isNotEmpty
-            ? _problem!.testCases.first.input
-            : '',
-        expected: _problem!.testCases.isNotEmpty
-            ? _problem!.testCases.first.expectedOutput
-            : '',
-        actual: _output.split('\n').last,
-      );
-      setState(() { _explanation = explanation; _explaining = false; });
-    } catch (e) {
-      setState(() { _explanation = 'Error: $e'; _explaining = false; });
-    }
-  }
-
   @override
   void dispose() {
     _tabCtrl.dispose();
@@ -149,310 +63,188 @@ class _CodeEditorScreenState extends ConsumerState<CodeEditorScreen>
 
   @override
   Widget build(BuildContext context) {
+    final userData = ref.watch(userDataProvider);
+
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: AppBar(
-        backgroundColor: AppColors.bg,
-        title: Text(_problem?.title ?? 'Code Editor',
-            style: AppTextStyles.h3),
-        actions: [
-          if (_problem != null) ...[
-            DiffBadge(difficulty: _problem!.difficulty),
-            const SizedBox(width: 8),
-            CoinBadge(coins: _problem!.coins),
-            const SizedBox(width: 16),
-          ],
-        ],
-      ),
-      body: Column(
-        children: [
-          // Tabs
-          TabBar(
-            controller: _tabCtrl,
-            indicatorColor: AppColors.purple,
-            labelColor: AppColors.textPrimary,
-            unselectedLabelColor: AppColors.textHint,
-            tabs: const [
-              Tab(text: '📋 Problem'),
-              Tab(text: '💻 Code'),
-              Tab(text: '📤 Output'),
-            ],
-          ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── Custom Top Bar ────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('CodeCraft', style: AppTextStyles.h2.copyWith(color: AppColors.blue)),
+                  const Spacer(),
+                  const PointsBadge(points: '1.2k', icon: Icons.bolt),
+                  const SizedBox(width: 12),
+                  const CircleAvatar(
+                    radius: 16,
+                    backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=rahul'),
+                  ),
+                ],
+              ),
+            ),
 
-          // Tab content
-          Expanded(
-            child: TabBarView(
-              controller: _tabCtrl,
-              children: [
-                // Problem tab
-                SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: _problem != null
-                      ? FadeIn(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(_problem!.title,
-                                  style: AppTextStyles.h1),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  DiffBadge(
-                                      difficulty: _problem!.difficulty),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                      '${_problem!.acceptanceRate}% acceptance',
-                                      style: AppTextStyles.small),
-                                ],
+            // ── Problem Header ────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_problem?.title ?? 'Two Sum', style: AppTextStyles.display.copyWith(fontSize: 28)),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.green.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
                               ),
-                              const SizedBox(height: 16),
-                              Text(_problem!.description,
-                                  style: AppTextStyles.body.copyWith(
-                                      color: AppColors.textPrimary,
-                                      height: 1.6)),
-                              const SizedBox(height: 20),
-                              Text('Test Cases:', style: AppTextStyles.h3),
-                              const SizedBox(height: 8),
-                              ...List.generate(
-                                _problem!.testCases.length,
-                                (i) {
-                                  final tc = _problem!.testCases[i];
-                                  return Padding(
-                                    padding:
-                                        const EdgeInsets.only(bottom: 12),
-                                    child: GlassCard(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text('Test Case ${i + 1}',
-                                              style: AppTextStyles.h3
-                                                  .copyWith(fontSize: 13)),
-                                          const SizedBox(height: 8),
-                                          _CodeBlock(
-                                              label: 'Input',
-                                              text: tc.input),
-                                          const SizedBox(height: 6),
-                                          _CodeBlock(
-                                              label: 'Expected',
-                                              text: tc.expectedOutput),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              if (_problem!.hint != null) ...[
-                                const SizedBox(height: 12),
-                                GlassCard(
-                                  gradient: LinearGradient(colors: [
-                                    AppColors.orange.withOpacity(0.1),
-                                    AppColors.orange.withOpacity(0.02),
-                                  ]),
-                                  child: Row(
-                                    children: [
-                                      const Text('💡',
-                                          style: TextStyle(fontSize: 18)),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(_problem!.hint!,
-                                            style: AppTextStyles.body),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        )
-                      : const Center(
-                          child: CircularProgressIndicator(
-                              color: AppColors.purple)),
-                ),
+                              child: Text('Easy', style: AppTextStyles.small.copyWith(color: AppColors.green, fontWeight: FontWeight.bold)),
+                            ),
+                            const SizedBox(width: 12),
+                            const Icon(Icons.people_outline, color: AppColors.textHint, size: 14),
+                            const SizedBox(width: 4),
+                            Text('125.4k solved', style: AppTextStyles.small),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
 
-                // Code tab
-                Column(
-                  children: [
-                    // Language selector
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      color: AppColors.bgCard,
-                      child: Row(
+            // ── Language Selector & Tabs ────────────
+            Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: _languages.map((lang) {
+                  bool isSelected = lang == _selectedLang;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedLang = lang),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.code,
-                              color: AppColors.purple, size: 18),
-                          const SizedBox(width: 8),
-                          DropdownButton<String>(
-                            value: _selectedLang,
-                            dropdownColor: AppColors.bgCard,
-                            style: AppTextStyles.h3.copyWith(fontSize: 13),
-                            underline: const SizedBox(),
-                            items: _languages
-                                .map((l) => DropdownMenuItem(
-                                      value: l,
-                                      child: Text(l.toUpperCase()),
-                                    ))
-                                .toList(),
-                            onChanged: (v) {
-                              if (v != null) {
-                                setState(() => _selectedLang = v);
-                              }
-                            },
+                          Text(
+                            lang.toUpperCase(),
+                            style: AppTextStyles.small.copyWith(
+                              color: isSelected ? AppColors.purple : AppColors.textHint,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
                           ),
-                          const Spacer(),
-                          GradientButton(
-                            label: 'Run',
-                            small: true,
-                            icon: Icons.play_arrow,
-                            loading: _running,
-                            onTap: _runCode,
-                          ),
-                          const SizedBox(width: 8),
-                          GradientButton(
-                            label: 'Submit',
-                            small: true,
-                            icon: Icons.check,
-                            gradient: AppColors.gradGreenBlue,
-                            loading: _running,
-                            onTap: _submitCode,
-                          ),
+                          if (isSelected)
+                            Container(
+                              margin: const EdgeInsets.only(top: 4),
+                              width: 12,
+                              height: 2,
+                              color: AppColors.purple,
+                            ),
                         ],
                       ),
                     ),
-                    // Code editor
+                  );
+                }).toList(),
+              ),
+            ),
+            const Divider(color: AppColors.border, height: 1),
+
+            // ── Editor Area ──────────────────────────
+            Expanded(
+              child: Container(
+                color: const Color(0xFF03030F),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Line numbers
+                    Container(
+                      width: 40,
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Column(
+                        children: List.generate(20, (i) => Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: Text('${i + 1}', style: AppTextStyles.code.copyWith(color: AppColors.textHint.withOpacity(0.3), fontSize: 12)),
+                        )),
+                      ),
+                    ),
                     Expanded(
-                      child: Container(
-                        color: const Color(0xFF0A0818),
-                        child: TextField(
-                          controller: _codeCtrl,
-                          maxLines: null,
-                          expands: true,
-                          style: AppTextStyles.code.copyWith(fontSize: 13),
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.all(16),
-                            hintText: '// Write your code here...',
-                            hintStyle: TextStyle(
-                                color: AppColors.textHint, fontSize: 13),
-                          ),
+                      child: TextField(
+                        controller: _codeCtrl,
+                        maxLines: null,
+                        expands: true,
+                        style: AppTextStyles.code.copyWith(fontSize: 14, height: 1.5, color: Colors.blue[100]),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.only(top: 16, right: 16),
                         ),
                       ),
                     ),
                   ],
                 ),
-
-                // Output tab
-                SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      GlassCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text('Output', style: AppTextStyles.h3),
-                                const Spacer(),
-                                if (_output.contains('❌'))
-                                  GradientButton(
-                                    label: 'Why Failed?',
-                                    small: true,
-                                    icon: Icons.auto_awesome,
-                                    gradient: AppColors.gradPinkPurple,
-                                    loading: _explaining,
-                                    onTap: _explainFailure,
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0A0818),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: SelectableText(
-                                _output.isEmpty
-                                    ? 'Run your code to see output...'
-                                    : _output,
-                                style: AppTextStyles.code
-                                    .copyWith(fontSize: 12),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (_explanation.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        GlassCard(
-                          gradient: LinearGradient(colors: [
-                            AppColors.pink.withOpacity(0.08),
-                            AppColors.purple.withOpacity(0.05),
-                          ]),
-                          borderColor: AppColors.pink.withOpacity(0.3),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Text('🤖',
-                                      style: TextStyle(fontSize: 18)),
-                                  const SizedBox(width: 8),
-                                  Text('AI Explanation',
-                                      style: AppTextStyles.h3),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              SelectableText(
-                                _explanation,
-                                style: AppTextStyles.body.copyWith(
-                                    color: AppColors.textPrimary,
-                                    height: 1.5),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+
+            // ── Footer Actions ────────────────────────
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.bgSurface,
+                border: const Border(top: BorderSide(color: AppColors.border)),
+              ),
+              child: Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      if (_problem != null) _codeCtrl.text = _problem!.boilerplate;
+                    },
+                    icon: const Icon(Icons.refresh, color: AppColors.textSecondary, size: 20),
+                    label: Text('Reset', style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+                  ),
+                  const Spacer(),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.bgInput,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.terminal, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  GradientButton(
+                    label: 'Run',
+                    small: true,
+                    onTap: () {},
+                  ),
+                  const SizedBox(width: 12),
+                  GradientButton(
+                    label: 'Submit Code',
+                    gradient: AppColors.gradGreenBlue,
+                    onTap: () {},
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _CodeBlock extends StatelessWidget {
-  final String label;
-  final String text;
-  const _CodeBlock({required this.label, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: AppTextStyles.small.copyWith(color: AppColors.purple)),
-        const SizedBox(height: 4),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0A0818),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(text, style: AppTextStyles.code.copyWith(fontSize: 12)),
-        ),
-      ],
-    );
-  }
-}

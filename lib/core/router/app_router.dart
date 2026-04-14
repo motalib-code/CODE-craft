@@ -22,6 +22,9 @@ import '../../features/ai_mentor/screens/ai_chat_screen.dart';
 import '../../features/ai_mentor/screens/camera_scanner_screen.dart';
 import '../../features/gamification/screens/leaderboard_screen.dart';
 import '../../features/gamification/screens/badges_screen.dart';
+import '../../features/image_generator/screens/image_generator_screen.dart';
+import '../../features/community/screens/community_screen.dart';
+import '../../features/offline/screens/offline_sync_screen.dart';
 import '../widgets/custom_bottom_nav.dart';
 import '../constants/app_colors.dart';
 
@@ -148,6 +151,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/camera-scanner',
         builder: (context, state) => const CameraScannerScreen(),
+      ),
+      GoRoute(
+        path: '/image-generator',
+        builder: (context, state) => const ImageGeneratorScreen(),
+      ),
+      GoRoute(
+        path: '/community',
+        builder: (context, state) => const CommunityScreen(),
+      ),
+      GoRoute(
+        path: '/offline',
+        builder: (context, state) => const OfflineSyncScreen(),
       ),
     ],
   );

@@ -7,6 +7,31 @@ class GeminiService {
   static const _base =
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
+  static const String systemPrompt = '''
+You are **CodeCraft AI** — India's smartest & friendliest AI coding mentor for college students.
+
+Personality:
+- Friendly, energetic, motivational 💪
+- Mix Hindi + English naturally (bhai, yaar, mast, zabardast, samjha?)
+- Never give full code solution directly — always give smart hints
+- Use lots of emojis
+- Call yourself "CodeCraft AI" or "CodeCraft bhai"
+
+Available Modes (auto detect):
+1. Normal Coding Help (DSA, Flutter, Python, Java, etc.)
+2. Mock Interview → agar user "interview", "mock", "prepare for Google", "Amazon interview" bole to interview mode start karo. Ek question ek baar poocho. 6-8 questions ke baad detailed score report do.
+3. File/Image Analysis → agar user image ya code file upload kare to analyze karo (bugs, improvements, explanation)
+4. Video Analysis → video upload hone par describe karo ya code extract karo
+
+Response Rules:
+- Short aur crisp jawab do unless user detailed maange
+- Code blocks ke liye markdown use karo
+- Interview mode active hone par last mein [INTERVIEW_MODE] tag laga do
+- File analysis ke liye clear format use karo: 📸 FILE ANALYSIS
+
+You are talking to Indian college students. Be like a cool senior developer who is also a friend.
+''';
+
   final _client = http.Client();
 
   Future<String> _callGemini(String prompt,
@@ -42,27 +67,33 @@ class GeminiService {
   Future<String> chat({
     required String message,
     required List<Map<String, String>> history,
-    String? context,
+    String? fileType, // "image", "video", "code"
+    List<int>? fileBytes,
   }) async {
-    const systemPrompt = '''You are CodeCraft AI — expert coding mentor 
-for Indian college students. Rules:
-1. Never give direct code answers — use hints
-2. Mix Hindi naturally (bhai, yaar, etc.)
-3. Be encouraging and friendly 💪
-4. Format code in markdown blocks
-5. Max 200 words unless code needed
-6. Call yourself "CodeCraft AI" not Gemini''';
+    String extraContext = '';
 
-    final historyText =
-        history.map((m) => '${m['role']}: ${m['content']}').join('\n');
+    if (fileBytes != null && fileType != null) {
+      if (fileType == 'image') {
+        extraContext =
+            'User uploaded an image/screenshot. Analyze the code or error shown.';
+      } else if (fileType == 'video') {
+        extraContext =
+            'User uploaded a video. Describe it or extract code if visible.';
+      } else {
+        extraContext = 'User uploaded a $fileType file.';
+      }
+    }
 
-    final fullPrompt = '''$systemPrompt
+    final fullPrompt = '''
+$systemPrompt
 
-${context != null ? 'Context: $context\n' : ''}
-Chat history:
-$historyText
+$extraContext
 
-Student: $message''';
+Previous Chat:
+${history.map((m) => '${m['role']}: ${m['content']}').join('\n')}
+
+Student: $message
+''';
 
     return _callGemini(fullPrompt, temperature: 0.7);
   }

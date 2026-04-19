@@ -7,6 +7,9 @@ class UserModel {
   final String? year;
   final String? level;
   final String? githubUsername;
+  final String? avatarUrl;
+  final String? bio;
+  final List<dynamic>? githubTopRepos;
   final int coins;
   final int xp;
   final int streak;
@@ -14,6 +17,8 @@ class UserModel {
   final int rank;
   final List<String> earnedBadges;
   final List<String> completedTopics;
+  final String? linkedinUrl;
+  final String? discordUsername;
   final DateTime? createdAt;
   final DateTime? lastActive;
 
@@ -26,6 +31,11 @@ class UserModel {
     this.year,
     this.level,
     this.githubUsername,
+    this.linkedinUrl,
+    this.discordUsername,
+    this.avatarUrl,
+    this.bio,
+    this.githubTopRepos,
     this.coins = 0,
     this.xp = 0,
     this.streak = 0,
@@ -50,6 +60,11 @@ class UserModel {
       year: map['year'],
       level: map['level'],
       githubUsername: map['githubUsername'],
+      linkedinUrl: map['linkedinUrl'],
+      discordUsername: map['discordUsername'],
+      avatarUrl: map['avatarUrl'],
+      bio: map['bio'],
+      githubTopRepos: map['githubTopRepos'] as List?,
       coins: map['coins'] ?? 0,
       xp: map['xp'] ?? 0,
       streak: map['streak'] ?? 0,
@@ -75,6 +90,11 @@ class UserModel {
         'year': year,
         'level': level,
         'githubUsername': githubUsername,
+        'linkedinUrl': linkedinUrl,
+        'discordUsername': discordUsername,
+        'avatarUrl': avatarUrl,
+        'bio': bio,
+        'githubTopRepos': githubTopRepos,
         'coins': coins,
         'xp': xp,
         'streak': streak,
@@ -95,6 +115,11 @@ class UserModel {
     String? year,
     String? level,
     String? githubUsername,
+    String? linkedinUrl,
+    String? discordUsername,
+    String? avatarUrl,
+    String? bio,
+    List<dynamic>? githubTopRepos,
     int? coins,
     int? xp,
     int? streak,
@@ -114,6 +139,11 @@ class UserModel {
       year: year ?? this.year,
       level: level ?? this.level,
       githubUsername: githubUsername ?? this.githubUsername,
+      linkedinUrl: linkedinUrl ?? this.linkedinUrl,
+      discordUsername: discordUsername ?? this.discordUsername,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      bio: bio ?? this.bio,
+      githubTopRepos: githubTopRepos ?? this.githubTopRepos,
       coins: coins ?? this.coins,
       xp: xp ?? this.xp,
       streak: streak ?? this.streak,

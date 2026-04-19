@@ -28,8 +28,8 @@ class _CodeEditorScreenState extends ConsumerState<CodeEditorScreen>
   final _gemini = GeminiService();
 
   String _selectedLang = 'cpp';
-  String _output = '';
-  bool _running = false;
+  final String _output = '';
+  final bool _running = false;
   ProblemModel? _problem;
 
   final _languages = ['cpp', 'python', 'java', 'javascript', 'c'];
@@ -203,9 +203,9 @@ class _CodeEditorScreenState extends ConsumerState<CodeEditorScreen>
             // ── Footer Actions ────────────────────────
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.bgSurface,
-                border: const Border(top: BorderSide(color: AppColors.border)),
+                border: Border(top: BorderSide(color: AppColors.border)),
               ),
               child: Row(
                 children: [

@@ -20,7 +20,7 @@ class HomeScreen extends ConsumerWidget {
     final home = ref.watch(homeNotifierProvider);
     final userData = ref.watch(userDataProvider);
     final userName = userData.value?.name ?? 'Rahul';
-    final points = '1.2k';
+    const points = '1.2k';
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -52,10 +52,10 @@ class HomeScreen extends ConsumerWidget {
                   FadeInDown(
                     child: Row(
                       children: [
-                        CircleAvatar(
+                        const CircleAvatar(
                           radius: 20,
                           backgroundColor: AppColors.bgSurface,
-                          child: const Icon(Icons.person, color: AppColors.textSecondary),
+                          child: Icon(Icons.person, color: AppColors.textSecondary),
                         ),
                         const SizedBox(width: 12),
                         Text('CodeCraft', style: AppTextStyles.h2),
@@ -80,6 +80,29 @@ class HomeScreen extends ConsumerWidget {
                         const SizedBox(height: 12),
                         Text('Your journey to mastery continues today.', style: AppTextStyles.body),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FadeInUp(
+                    delay: const Duration(milliseconds: 80),
+                    child: GlassCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.assistant, color: AppColors.purple),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              'Open Portfolio & Career Assistant',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => context.push('/career-assistant'),
+                            icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -227,7 +250,7 @@ class HomeScreen extends ConsumerWidget {
                       height: 240,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
-                        children: [
+                        children: const [
                           _ContinueLearningCard(
                             title: 'Segment Trees & Fenwick',
                             subtitle: 'ADVANCED DATA STRUCTURES',

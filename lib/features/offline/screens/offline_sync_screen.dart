@@ -72,13 +72,13 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen> {
                           ),
                           Switch(
                             value: liteMode,
-                            activeColor: AppColors.purple,
+                            activeThumbColor: AppColors.purple,
                             onChanged: (val) => setState(() => liteMode = val),
                           ),
                         ],
                       ),
                       const SizedBox(height: 24),
-                      Divider(color: AppColors.border),
+                      const Divider(color: AppColors.border),
                       const SizedBox(height: 24),
                       Row(
                         children: [

@@ -4,13 +4,13 @@ class AppColors {
   AppColors._();
 
   // ── Backgrounds ──────────────────────────────────
-  static const Color bg = Color(0xFF0D0B1F);
+  static const Color bg = Color(0xFF1A1033);
   static const Color bgCard = Color(0xFF13111E);
   static const Color bgSurface = Color(0xFF1A1730);
   static const Color bgInput = Color(0xFF1E1B35);
 
   // ── Brand ────────────────────────────────────────
-  static const Color purple = Color(0xFF7C3AED);
+  static const Color purple = Color(0xFF6B5CE7);
   static const Color blue = Color(0xFF2563EB);
   static const Color cyan = Color(0xFF06B6D4);
   static const Color green = Color(0xFF10B981);
@@ -31,7 +31,7 @@ class AppColors {
 
   // ── Gradients ────────────────────────────────────
   static const LinearGradient gradPurpleBlue = LinearGradient(
-    colors: [Color(0xFF7C3AED), Color(0xFF2563EB)],
+    colors: [Color(0xFF6B5CE7), Color(0xFF4A3E99)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -49,11 +49,11 @@ class AppColors {
   );
 
   static const LinearGradient gradPinkPurple = LinearGradient(
-    colors: [Color(0xFFEC4899), Color(0xFF7C3AED)],
+    colors: [Color(0xFFEC4899), Color(0xFF6B5CE7)],
   );
 
   static const LinearGradient gradBg = LinearGradient(
-    colors: [Color(0xFF0D0B1F), Color(0xFF13111E)],
+    colors: [Color(0xFF1A1033), Color(0xFF13111E)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );

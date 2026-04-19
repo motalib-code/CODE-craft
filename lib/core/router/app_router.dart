@@ -13,11 +13,13 @@ import '../../features/roadmap/screens/syllabus_parser_screen.dart';
 import '../../features/roadmap/screens/roadmap_explorer_screen.dart';
 import '../../features/practice/screens/practice_screen.dart';
 import '../../features/practice/screens/code_editor_screen.dart';
-import '../../features/projects/screens/projects_screen.dart';
+import '../../features/practice/screens/problem_detail_screen.dart';
+import '../../screens/projects_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/resume_screen.dart';
 import '../../features/profile/screens/swag_store_screen.dart';
 import '../../features/profile/screens/mock_interview_screen.dart';
+import '../../features/profile/screens/company_research_screen.dart';
 import '../../features/ai_mentor/screens/ai_chat_screen.dart';
 import '../../features/ai_mentor/screens/camera_scanner_screen.dart';
 import '../../features/gamification/screens/leaderboard_screen.dart';
@@ -25,6 +27,8 @@ import '../../features/gamification/screens/badges_screen.dart';
 import '../../features/image_generator/screens/image_generator_screen.dart';
 import '../../features/community/screens/community_screen.dart';
 import '../../features/offline/screens/offline_sync_screen.dart';
+import '../../screens/career_assistant_shell_screen.dart';
+import '../../screens/resume_checker_screen.dart';
 import '../widgets/custom_bottom_nav.dart';
 import '../constants/app_colors.dart';
 
@@ -115,6 +119,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/practice/problem/:slug',
+        builder: (context, state) => ProblemDetailScreen(
+          problemSlug: state.pathParameters['slug']!,
+        ),
+      ),
+      GoRoute(
         path: '/topic/:topicName',
         builder: (context, state) => TopicDetailScreen(
           topicName: state.pathParameters['topicName']!,
@@ -145,6 +155,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ResumeScreen(),
       ),
       GoRoute(
+        path: '/company-research',
+        builder: (context, state) => const CompanyResearchScreen(),
+      ),
+      GoRoute(
         path: '/roadmap/explorer',
         builder: (context, state) => const RoadmapExplorerScreen(),
       ),
@@ -163,6 +177,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/offline',
         builder: (context, state) => const OfflineSyncScreen(),
+      ),
+      GoRoute(
+        path: '/career-assistant',
+        builder: (context, state) => const CareerAssistantShellScreen(),
+      ),
+      GoRoute(
+        path: '/resume-checker',
+        builder: (context, state) => const ResumeCheckerScreen(),
       ),
     ],
   );

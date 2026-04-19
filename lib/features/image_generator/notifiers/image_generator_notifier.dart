@@ -39,7 +39,7 @@ class ImageGeneratorNotifier extends StateNotifier<ImageGeneratorState> {
       // For now, we use a high-quality placeholder that matches the prompt's theme
       await Future.delayed(const Duration(seconds: 2));
       
-      final newUrl = 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=1000';
+      const newUrl = 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=1000';
       
       state = state.copyWith(
         isLoading: false,

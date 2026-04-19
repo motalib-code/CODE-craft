@@ -1,311 +1,277 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:animate_do/animate_do.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter_markdown/flutter_markdown.dart';
+import '../../../core/services/gemini_service.dart';
+import '../../../core/widgets/glass_card.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
-import '../../../core/widgets/glass_card.dart';
-import '../../../core/widgets/gradient_button.dart';
-import '../../../core/widgets/gradient_text.dart';
-import '../notifiers/ai_mentor_notifier.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class AiChatScreen extends ConsumerStatefulWidget {
   const AiChatScreen({super.key});
-
   @override
   ConsumerState<AiChatScreen> createState() => _AiChatScreenState();
 }
 
 class _AiChatScreenState extends ConsumerState<AiChatScreen> {
-  final _msgCtrl = TextEditingController();
-  final _scrollCtrl = ScrollController();
+  final TextEditingController _controller = TextEditingController();
+  final List<Map<String, dynamic>> _messages = [];
+  final GeminiService _gemini = GeminiService();
+  final stt.SpeechToText _speech = stt.SpeechToText();
 
-  void _send([String? text]) {
-    final message = text ?? _msgCtrl.text.trim();
-    if (message.isEmpty) return;
-    _msgCtrl.clear();
-    ref.read(aiMentorNotifierProvider.notifier).sendMessage(message);
-    _scrollToBottom();
+  bool _isTyping = false;
+  bool _isListening = false;
+  String _interviewStatus = "normal"; // normal or interview
+
+  @override
+  void initState() {
+    super.initState();
+    _addWelcomeMessage();
   }
 
-  void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (_scrollCtrl.hasClients) {
-        _scrollCtrl.animateTo(
-          _scrollCtrl.position.maxScrollExtent + 100,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
+  void _addWelcomeMessage() {
+    _messages.add({
+      'role': 'ai',
+      'content': 'Namaste bhai! 👋\nMain CodeCraft AI hoon. Kya help chahiye aaj? Coding, Mock Interview, ya koi file/image dikhao!',
     });
   }
 
-  @override
-  void dispose() {
-    _msgCtrl.dispose();
-    _scrollCtrl.dispose();
-    super.dispose();
+  Future<void> _sendMessage() async {
+    if (_controller.text.trim().isEmpty) return;
+
+    final userMessage = _controller.text.trim();
+    setState(() {
+      _messages.add({'role': 'user', 'content': userMessage});
+      _isTyping = true;
+      _controller.clear();
+    });
+
+    try {
+      final response = await _gemini.chat(
+        message: userMessage,
+        history: _messages
+            .map((m) =>
+                {'role': m['role'].toString(), 'content': m['content'].toString()})
+            .toList(),
+      );
+
+      setState(() {
+        _messages.add({'role': 'ai', 'content': response});
+        _isTyping = false;
+
+        // Auto detect interview mode
+        if (response.contains('[INTERVIEW_MODE]') ||
+            userMessage.toLowerCase().contains('interview')) {
+          _interviewStatus = "interview";
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _messages.add({
+          'role': 'ai',
+          'content': 'Yaar kuch gadbad ho gaya. Phir se try karo! 😅'
+        });
+        _isTyping = false;
+      });
+    }
+  }
+
+  // Mic Button
+  Future<void> _toggleListening() async {
+    if (!_isListening) {
+      bool available = await _speech.initialize();
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (result) {
+            _controller.text = result.recognizedWords;
+            if (result.finalResult) {
+              setState(() => _isListening = false);
+              _sendMessage();
+            }
+          },
+        );
+      }
+    } else {
+      _speech.stop();
+      setState(() => _isListening = false);
+    }
+  }
+
+  // File Upload (Image + Code)
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['dart', 'py', 'java', 'cpp', 'js', 'txt', 'json'],
+    );
+
+    if (result != null) {
+      // For demo - send file name as message
+      setState(() {
+        _messages.add({
+          'role': 'user',
+          'content': '📎 File uploaded: ${result.files.first.name}',
+          'isFile': true
+        });
+      });
+
+      // Gemini ko bhej sakte ho (fileBytes ke saath)
+      final response = await _gemini.chat(
+        message: "Analyze this uploaded file: ${result.files.first.name}",
+        history: _messages
+            .map((m) =>
+                {'role': m['role'].toString(), 'content': m['content'].toString()})
+            .toList(),
+      );
+
+      setState(() => _messages.add({'role': 'ai', 'content': response}));
+    }
+  }
+
+  // Image Upload (Camera + Gallery)
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      setState(() {
+        _messages.add({'role': 'user', 'content': '📸 Image uploaded'});
+      });
+
+      final bytes = await image.readAsBytes();
+      final response = await _gemini.chat(
+        message: "Analyze this image/screenshot",
+        history: _messages
+            .map((m) =>
+                {'role': m['role'].toString(), 'content': m['content'].toString()})
+            .toList(),
+        fileType: 'image',
+        fileBytes: bytes,
+      );
+
+      setState(() => _messages.add({'role': 'ai', 'content': response}));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final chatState = ref.watch(aiMentorNotifierProvider);
-
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: Column(
+      appBar: AppBar(
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Custom App Bar ────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                children: [
-                  Stack(
-                    children: [
-                      const CircleAvatar(
-                        radius: 20,
-                        backgroundImage: NetworkImage('https://ui-avatars.com/api/?name=AI&background=9333EA&color=fff'),
-                      ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: AppColors.green,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.bg, width: 2),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('CodeCraft AI', style: AppTextStyles.h2.copyWith(fontSize: 18)),
-                      Text('ONLINE • NEURAL ENGINE V4.2', 
-                        style: AppTextStyles.small.copyWith(
-                          color: AppColors.green, 
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                          fontSize: 8,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.bgSurface,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.settings, color: Colors.white, size: 20),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Chat Body ────────────────────────────
-            Expanded(
-              child: ListView(
-                controller: _scrollCtrl,
-                padding: const EdgeInsets.all(20),
-                children: [
-                  // System Status Message
-                  FadeInUp(
-                    child: GlassCard(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSystemLine('connection_established', 'true'),
-                          _buildSystemLine('greeting', '"Welcome back, Lead Dev."'),
-                          _buildSystemLine('status', '"I\'ve analyzed your latest repository. Ready to refactor that async middleware?"'),
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'async function initSystem() {\n  try {\n    const nexus = await CodeCraft.connect();\n    // Handshake in progress...\n    return nexus.ready;\n  } catch (err) {\n    console.error(`ERR: \${err}`);\n  }\n}',
-                              style: AppTextStyles.code.copyWith(fontSize: 12, height: 1.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text('AI MENTOR • 09:41 AM', style: AppTextStyles.small.copyWith(fontSize: 8, color: AppColors.textHint)),
-                  const SizedBox(height: 24),
-
-                  // User Message
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        FadeInRight(
-                          child: Container(
-                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              gradient: AppColors.gradPurpleBlue,
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                topRight: Radius.circular(16),
-                                bottomLeft: Radius.circular(16),
-                                bottomRight: Radius.circular(4),
-                              ),
-                            ),
-                            child: Text(
-                              'Can you explain why the useEffect hook is causing an infinite loop in my dashboard component?',
-                              style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text('YOU • 09:42 AM', style: AppTextStyles.small.copyWith(fontSize: 8, color: AppColors.textHint)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // AI Response
-                  FadeInUp(
-                    child: GlassCard(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'The infinite loop typically occurs because you\'re updating a state variable inside useEffect that is also listed in its dependency array.',
-                            style: AppTextStyles.body,
-                          ),
-                          const SizedBox(height: 16),
-                          _buildCodeCompareCard(),
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.green.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.green.withOpacity(0.2)),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.tips_and_updates, color: AppColors.green, size: 18),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'PRO TIP: Always use a functional update if you depend on previous state.',
-                                    style: AppTextStyles.small.copyWith(color: AppColors.green, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text('AI MENTOR • 09:43 AM', style: AppTextStyles.small.copyWith(fontSize: 8, color: AppColors.textHint)),
-                  const SizedBox(height: 32),
-
-                  // "Neural Core Processing..." Status
-                  Row(
-                    children: [
-                      _buildDot(0),
-                      _buildDot(1),
-                      _buildDot(2),
-                      const SizedBox(width: 10),
-                      Text('NEURAL CORE IS PROCESSING...', style: AppTextStyles.small.copyWith(letterSpacing: 1, fontSize: 10, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Suggestions
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildSuggestionChip('Explain Redux vs Context'),
-                        _buildSuggestionChip('Debug my React API call'),
-                        _buildSuggestionChip('Best practices for hooks'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
+            Text('CodeCraft AI', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('Online • Neural Engine v4.2',
+                style: TextStyle(fontSize: 12, color: Colors.green)),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSystemLine(String key, String val) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Text('> ', style: AppTextStyles.code.copyWith(color: AppColors.green, fontSize: 12)),
-          Text('$key: ', style: AppTextStyles.code.copyWith(color: AppColors.green, fontSize: 12)),
-          Text(val, style: AppTextStyles.code.copyWith(color: AppColors.blue, fontSize: 12)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.psychology_outlined, color: Colors.orange),
+            onPressed: () {
+              setState(() => _interviewStatus = "interview");
+              _messages.add({
+                'role': 'ai',
+                'content':
+                    'Interview mode ON! 🎤 Batao kaunsi company ke liye prepare kar rahe ho?'
+              });
+            },
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildCodeCompareCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
         children: [
-          Text('// ❌ The Loop Creator', style: AppTextStyles.code.copyWith(color: AppColors.red, fontSize: 11)),
-          Text('useEffect(() => {\n  setData(val);\n}, [data]);', style: AppTextStyles.code.copyWith(fontSize: 11)),
-          const SizedBox(height: 12),
-          Text('// ✅ The Optimized Way', style: AppTextStyles.code.copyWith(color: AppColors.green, fontSize: 11)),
-          Text('useEffect(() => {\n  fetchData();\n}, []);', style: AppTextStyles.code.copyWith(fontSize: 11)),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: _messages.length + (_isTyping ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == _messages.length && _isTyping) {
+                  return const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text('CodeCraft AI soch raha hai...',
+                          style: TextStyle(color: Colors.grey)),
+                    ),
+                  );
+                }
+
+                final msg = _messages[index];
+                final isUser = msg['role'] == 'user';
+
+                return Align(
+                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.8),
+                    child: GlassCard(
+                      gradient: isUser ? AppColors.gradPurpleBlue : null,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MarkdownBody(
+                            data: msg['content'].toString(),
+                            styleSheet: MarkdownStyleSheet(
+                              p: AppTextStyles.body.copyWith(
+                                  color: isUser ? Colors.white : Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Bottom Input Bar
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              color: AppColors.bgSurface,
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                    icon: const Icon(Icons.attach_file), onPressed: _pickFile),
+                IconButton(icon: const Icon(Icons.image), onPressed: _pickImage),
+                IconButton(
+                  icon: Icon(_isListening ? Icons.mic_off : Icons.mic,
+                      color: _isListening ? Colors.red : AppColors.purple),
+                  onPressed: _toggleListening,
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    style: AppTextStyles.body,
+                    decoration: InputDecoration(
+                      hintText: "Message CodeCraft AI...",
+                      hintStyle: AppTextStyles.small,
+                      filled: true,
+                      fillColor: AppColors.bgInput,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: BorderSide.none),
+                    ),
+                    onSubmitted: (_) => _sendMessage(),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.send, color: AppColors.purple),
+                  onPressed: _sendMessage,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDot(int i) {
-    return Container(
-      margin: const EdgeInsets.only(right: 4),
-      width: 6,
-      height: 6,
-      decoration: const BoxDecoration(color: AppColors.purple, shape: BoxShape.circle),
-    );
-  }
-
-  Widget _buildSuggestionChip(String label) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Text(label, style: AppTextStyles.small.copyWith(fontWeight: FontWeight.bold)),
     );
   }
 }

@@ -11,6 +11,9 @@ import '../../../core/widgets/gradient_button.dart';
 import '../../../core/widgets/points_badge.dart';
 import '../../../core/utils/helpers.dart';
 import '../../auth/notifiers/auth_notifier.dart';
+import '../../../core/services/github_service.dart';
+import '../notifiers/profile_notifier.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -22,6 +25,8 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
+  final TextEditingController _githubController = TextEditingController();
+  bool _isFetching = false;
 
   @override
   void initState() {
@@ -32,6 +37,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   @override
   void dispose() {
     _tabCtrl.dispose();
+    _githubController.dispose();
     super.dispose();
   }
 
@@ -40,9 +46,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final userData = ref.watch(userDataProvider);
     final user = userData.value;
     final name = user?.name ?? 'Rahul Sharma';
-    final handle = '@rahul_codes';
-    final college = 'IIT Bombay';
-    final xp = '12.4k';
+    const handle = '@rahul_codes';
+    const college = 'IIT Bombay';
+    const xp = '12.4k';
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -173,7 +179,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                           const TextSpan(text: '3rd Year @ '),
                           TextSpan(text: college, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                           const TextSpan(text: ' | '),
-                          TextSpan(text: 'Flutter Developer', style: TextStyle(color: AppColors.blue, fontWeight: FontWeight.bold)),
+                          const TextSpan(text: 'Flutter Developer', style: TextStyle(color: AppColors.blue, fontWeight: FontWeight.bold)),
                           const TextSpan(text: ' | Passionate about building performant cross-platform experiences and solving algorithmic challenges.'),
                         ],
                       ),
@@ -185,8 +191,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             const SizedBox(height: 40),
 
             // ── Stats Row 1 ──────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
                   _BigStatCard(
@@ -199,8 +205,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               ),
             ),
             const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
                   _BigStatCard(
@@ -322,6 +328,161 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ),
             const SizedBox(height: 32),
 
+            // ── GitHub Integration Card ──────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Connect GitHub", style: AppTextStyles.h2),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _githubController,
+                      style: AppTextStyles.body,
+                      decoration: const InputDecoration(
+                        hintText: "Paste GitHub username or profile link",
+                        prefixIcon: Icon(Icons.link, color: AppColors.purple),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    GradientButton(
+                      label: "Fetch & Update Profile",
+                      loading: _isFetching,
+                      onTap: () async {
+                        if (_githubController.text.isEmpty) return;
+                        setState(() => _isFetching = true);
+                        try {
+                          final ghProfile = await GithubService.fetchGitHubProfile(_githubController.text);
+                          final user = ref.read(authStateProvider).value;
+                          if (user != null) {
+                            await updateProfileWithGitHub(ref, user.uid, ghProfile);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("✅ GitHub profile connected & updated!")),
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("❌ Error: $e")),
+                            );
+                          }
+                        } finally {
+                          if (mounted) setState(() => _isFetching = false);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // ── Company Research Card ────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GlassCard(
+                onTap: () => context.push('/company-research'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("🔍 Company Research", style: AppTextStyles.h2),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Verify companies & find opportunities",
+                              style: AppTextStyles.small.copyWith(color: AppColors.textHint),
+                            ),
+                          ],
+                        ),
+                        const Icon(Icons.arrow_forward, color: AppColors.blue, size: 24),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      "Research if a company is legitimate and find job roles that match your interests",
+                      style: AppTextStyles.body.copyWith(color: AppColors.textHint, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // ── Top 5 GitHub Projects ────────────────
+            if (user?.githubTopRepos != null && user!.githubTopRepos!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Top 5 GitHub Projects", style: AppTextStyles.h2),
+                    const SizedBox(height: 16),
+                    ...List.generate(user.githubTopRepos!.length, (i) {
+                      final repo = user.githubTopRepos![i];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: GlassCard(
+                          onTap: () => launchUrl(Uri.parse(repo['url'])),
+                          child: ListTile(
+                            leading: const Icon(Icons.code, color: AppColors.mint),
+                            title: Text(repo['name'], style: AppTextStyles.h3),
+                            subtitle: Text(repo['description'] ?? 'No description', style: AppTextStyles.small),
+                            trailing: Text("${repo['stars']} ⭐", style: AppTextStyles.small),
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+
+            // ── Social Presence ────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Social Presence", style: AppTextStyles.h2),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _SocialButton(
+                          label: 'GitHub',
+                          icon: 'assets/icons/github.svg', // Assuming you have these
+                          color: Colors.white,
+                          onTap: () => Helpers.launchExternalUrl('https://github.com/${user?.githubUsername ?? ""}'),
+                        ),
+                        _SocialButton(
+                          label: 'LinkedIn',
+                          icon: 'assets/icons/linkedin.svg',
+                          color: const Color(0xFF0077B5),
+                          onTap: () => Helpers.launchExternalUrl(user?.linkedinUrl ?? 'https://linkedin.com'),
+                        ),
+                        _SocialButton(
+                          label: 'Discord',
+                          icon: 'assets/icons/discord.svg',
+                          color: const Color(0xFF5865F2),
+                          onTap: () => Helpers.launchExternalUrl('https://discord.com'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+
             // ── Top Accomplishments ──────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -330,17 +491,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 children: [
                   Text('Top Accomplishments', style: AppTextStyles.h2),
                   const SizedBox(height: 16),
-                  _AccomplishmentItem(
+                  const _AccomplishmentItem(
                     title: 'Elite Coder Award',
                     subtitle: 'Ranked top 1% in Summer Challenge 2023',
                     icon: Icons.verified_outlined,
                   ),
-                  _AccomplishmentItem(
+                  const _AccomplishmentItem(
                     title: 'Binary Conqueror',
                     subtitle: 'Solved 50+ Hard level problems on first try',
                     icon: Icons.image_search,
                   ),
-                  _AccomplishmentItem(
+                  const _AccomplishmentItem(
                     title: 'Lead Mentor',
                     subtitle: 'Helped 200+ students in Flutter Peer Groups',
                     icon: Icons.group_outlined,
@@ -420,8 +581,8 @@ class _HeatmapGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double spacing = 4;
-        final int columns = 24;
+        const double spacing = 4;
+        const int columns = 24;
         final double cellSize = (constraints.maxWidth - (columns - 1) * spacing) / columns;
         
         return Wrap(
@@ -512,4 +673,46 @@ class _AccomplishmentItem extends StatelessWidget {
     );
   }
 }
+class _SocialButton extends StatelessWidget {
+  final String label;
+  final String icon;
+  final Color color;
+  final VoidCallback onTap;
 
+  const _SocialButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+              border: Border.all(color: color.withOpacity(0.3)),
+            ),
+            child: Icon(
+              label == 'GitHub'
+                  ? Icons.code
+                  : (label == 'LinkedIn' ? Icons.work_outline : Icons.discord),
+              color: color,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(label,
+              style: AppTextStyles.small
+                  .copyWith(color: color, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+}

@@ -23,7 +23,7 @@ class _MockInterviewScreenState extends State<MockInterviewScreen> {
   String _type = '';
   String _company = '';
   bool _started = false;
-  bool _loading = false;
+  final bool _loading = false;
   bool _completed = true; // Set to true for demo based on image
   List<Map<String, String>> _messages = [];
   String _results = '';
@@ -345,7 +345,7 @@ class _MockInterviewScreenState extends State<MockInterviewScreen> {
               ],
             ),
           ),
-        )).toList(),
+        )),
       ],
     );
   }

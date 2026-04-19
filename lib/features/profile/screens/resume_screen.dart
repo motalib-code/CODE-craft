@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
-import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/gradient_text.dart';
 import '../../../core/widgets/gradient_button.dart';
 import '../../auth/notifiers/auth_notifier.dart';

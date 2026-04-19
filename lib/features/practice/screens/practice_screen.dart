@@ -1,203 +1,501 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/widgets/glass_card.dart';
-import '../../../core/widgets/gradient_text.dart';
-import '../../../core/widgets/tag_chip.dart';
-import '../../../core/widgets/diff_badge.dart';
-import '../../../core/widgets/points_badge.dart';
-import '../notifiers/practice_notifier.dart';
+import '../../../models/algo_topic.dart';
+import '../../../models/dbms_topic.dart';
+import '../../../models/leetcode_problem.dart';
+import '../../../models/youtube_video.dart';
+import '../../../providers/problems_provider.dart';
+import '../../../providers/xp_provider.dart';
+import '../../../providers/voice_provider.dart';
+import '../../../services/leetcode_service.dart';
+import '../../../services/youtube_service.dart';
+import '../../widgets/practice/problem_card.dart';
+import '../../widgets/practice/video_card.dart';
+import '../../widgets/practice/voice_button.dart';
+import '../../widgets/practice/algo_topic_card.dart';
+import '../../../models/continue_learning.dart';
+import '../../widgets/practice/continue_learning_card.dart';
 import '../../auth/notifiers/auth_notifier.dart';
 
-class PracticeScreen extends ConsumerWidget {
+class PracticeScreen extends ConsumerStatefulWidget {
   const PracticeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final practice = ref.watch(practiceNotifierProvider);
-    final notifier = ref.read(practiceNotifierProvider.notifier);
-    final filtered = practice.filteredProblems;
+  ConsumerState<PracticeScreen> createState() => _PracticeScreenState();
+}
+
+class _PracticeScreenState extends ConsumerState<PracticeScreen> {
+  late TextEditingController _searchController;
+  String _selectedCategory = 'Coding Practice';
+  bool _isLoadingProblems = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _loadInitialProblems();
+  }
+
+  Future<void> _loadInitialProblems() async {
+    setState(() => _isLoadingProblems = true);
+    await ref.read(problemsProvider.notifier).fetchProblems();
+    setState(() => _isLoadingProblems = false);
+  }
+
+  void _handleVoiceCommand(String command) {
+    command = command.toLowerCase().trim();
+
+    // "explain binary search" → show concept detail
+    if (command.startsWith('explain ')) {
+      String concept = command.substring(8);
+      // TODO: Navigate to concept detail screen
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Searching for: $concept')),
+      );
+      return;
+    }
+
+    // "search two sum" → filter problems
+    if (command.startsWith('search ')) {
+      String query = command.substring(7);
+      _searchController.text = query;
+      ref.read(searchQueryProvider.notifier).state = query;
+      return;
+    }
+
+    // Filter by difficulty
+    if (command.contains('easy')) {
+      ref.read(difficultyFilterProvider.notifier).state = 'Easy';
+      return;
+    }
+    if (command.contains('medium')) {
+      ref.read(difficultyFilterProvider.notifier).state = 'Medium';
+      return;
+    }
+    if (command.contains('hard')) {
+      ref.read(difficultyFilterProvider.notifier).state = 'Hard';
+      return;
+    }
+
+    // Switch tabs
+    if (command.contains('algorithm')) {
+      setState(() => _selectedCategory = 'Algorithms');
+      return;
+    }
+    if (command.contains('data structure')) {
+      setState(() => _selectedCategory = 'Data Structures');
+      return;
+    }
+    if (command.contains('database') || command.contains('sql')) {
+      setState(() => _selectedCategory = 'DBMS');
+      return;
+    }
+
+    // Default: search
+    _searchController.text = command;
+    ref.read(searchQueryProvider.notifier).state = command;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final xp = ref.watch(xpProvider);
+    final streak = ref.watch(streakProvider);
+    final rank = ref.watch(rankProvider);
+    final isListening = ref.watch(voiceProvider);
+    final filteredProblems = ref.watch(filteredProblemsProvider);
     final userData = ref.watch(userDataProvider);
-    
-    final categories = ['Coding Practice', 'Algorithms', 'Data Structures', 'DBMS', 'OS'];
-    final filters = ['All', 'Easy', 'Medium', 'Hard'];
 
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(
           children: [
-            // ── Top Bar ──────────────────────────────
+            // ═══════════════════ HEADER ═══════════════════
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // Name + XP badge
+                  Row(
                     children: [
-                      Text('Hello', style: AppTextStyles.body.copyWith(color: AppColors.textHint)),
-                      Text(userData.value?.name ?? 'Rahul Sharma', style: AppTextStyles.h2),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Hello',
+                              style: AppTextStyles.body
+                                  .copyWith(color: AppColors.textHint)),
+                          Text(userData.value?.name ?? 'Coder',
+                              style: AppTextStyles.h2),
+                        ],
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.purple.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.purple),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.bolt,
+                                color: Colors.amber, size: 16),
+                            const SizedBox(width: 6),
+                            Text('$xp XP',
+                                style: AppTextStyles.small.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                )),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                  const Spacer(),
-                  const PointsBadge(points: '1.2k', icon: Icons.bolt),
+                  const SizedBox(height: 12),
+                  // Streak + Rank info
+                  Row(
+                    children: [
+                      Text('🔥 $streak day streak',
+                          style: AppTextStyles.body
+                              .copyWith(color: Colors.amber)),
+                      const SizedBox(width: 16),
+                      Text('✅ Solved Today',
+                          style: AppTextStyles.body
+                              .copyWith(color: Colors.green)),
+                      const SizedBox(width: 16),
+                      Text('🏆 Rank #$rank',
+                          style: AppTextStyles.body
+                              .copyWith(color: AppColors.purple)),
+                    ],
+                  ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
 
-            // ── Search & Filter ──────────────────────
+            // ═══════════════════ SEARCH BAR WITH VOICE ═══════════════════
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: GlassCard(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: TextField(
-                  onChanged: notifier.setSearch,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Search problems, topics...',
-                    hintStyle: AppTextStyles.body.copyWith(color: AppColors.textHint),
-                    prefixIcon: const Icon(Icons.search, color: AppColors.textHint, size: 20),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // ── Categories ──────────────────────────
-            SizedBox(
-              height: 40,
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                scrollDirection: Axis.horizontal,
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  final cat = categories[index];
-                  bool isSelected = index == 0;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.purple : Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
-                        border: isSelected ? null : Border.all(color: AppColors.border),
-                      ),
-                      child: Text(
-                        cat,
-                        style: AppTextStyles.small.copyWith(
-                          color: isSelected ? Colors.white : AppColors.textHint,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GlassCard(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          ref
+                              .read(searchQueryProvider.notifier)
+                              .state = value;
+                        },
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Search problems, topics...',
+                          hintStyle: AppTextStyles.body
+                              .copyWith(color: AppColors.textHint),
+                          prefixIcon: const Icon(Icons.search,
+                              color: AppColors.textHint, size: 20),
+                          border: InputBorder.none,
                         ),
                       ),
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(width: 8),
+                  VoiceButton(
+                    isListening: isListening,
+                    onPressed: () {
+                      final voiceNotifier =
+                          ref.read(voiceProvider.notifier);
+                      voiceNotifier.toggleListening((text) {
+                        _handleVoiceCommand(text);
+                      });
+                    },
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
 
-            Expanded(
-              child: SingleChildScrollView(
+            // ═══════════════════ CATEGORY CHIPS ═══════════════════
+            SizedBox(
+              height: 40,
+              child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Featured Card ──────────────────────
-                    Text('Recommended For You', style: AppTextStyles.h2),
-                    const SizedBox(height: 16),
-                    _FeaturedProblemCard(
-                      title: 'Dynamic Programming',
-                      subtitle: 'Master optimization techniques',
-                      difficulty: 'Hard',
-                      acceptance: '45.2%',
-                      imageUrl: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80',
-                    ),
-                    const SizedBox(height: 32),
-
-                    // ── Complexity Filter ──────────────────
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Problems', style: AppTextStyles.h2),
-                        Row(
-                          children: filters.map((f) => Padding(
-                            padding: const EdgeInsets.only(left: 8),
-                            child: GestureDetector(
-                              onTap: () => notifier.setFilter(f),
+                scrollDirection: Axis.horizontal,
+                children: [                  'Continue Learning',                  'Coding Practice',
+                  'Algorithms',
+                  'Data Structures',
+                  'DBMS',
+                  'System Design',
+                ]
+                    .map((cat) => Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() => _selectedCategory = cat);
+                              ref
+                                  .read(
+                                      categoryProvider.notifier)
+                                  .state = cat;
+                            },
+                            child: Container(
+                              padding:
+                                  const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8),
+                              decoration: BoxDecoration(
+                                color: _selectedCategory ==
+                                        cat
+                                    ? AppColors.purple
+                                    : Colors.transparent,
+                                borderRadius:
+                                    BorderRadius.circular(20),
+                                border: _selectedCategory == cat
+                                    ? null
+                                    : Border.all(
+                                        color:
+                                            AppColors.border),
+                              ),
                               child: Text(
-                                f,
-                                style: AppTextStyles.small.copyWith(
-                                  color: practice.selectedFilter == f ? AppColors.blue : AppColors.textHint,
-                                  fontWeight: practice.selectedFilter == f ? FontWeight.bold : FontWeight.normal,
+                                cat,
+                                style:
+                                    AppTextStyles.small
+                                        .copyWith(
+                                  color: _selectedCategory ==
+                                          cat
+                                      ? Colors.white
+                                      : AppColors
+                                          .textHint,
+                                  fontWeight: _selectedCategory ==
+                                          cat
+                                      ? FontWeight.bold
+                                      : FontWeight
+                                          .normal,
                                 ),
                               ),
                             ),
-                          )).toList(),
-                        ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // ═══════════════════ CONTENT AREA ═══════════════════
+            Expanded(
+              child: _selectedCategory == 'Continue Learning'
+                  ? _buildContinueLearningSection()
+                  : _buildCategoryContent(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryContent() {
+    if (_selectedCategory == 'Coding Practice') {
+      return _buildCodingPracticeContent();
+    } else if (_selectedCategory == 'Algorithms') {
+      return _buildAlgorithmsContent();
+    } else if (_selectedCategory == 'Data Structures') {
+      return _buildDataStructuresContent();
+    } else if (_selectedCategory == 'DBMS') {
+      return _buildDBMSContent();
+    } else {
+      return const Center(
+        child: Text('Coming Soon!',
+            style: TextStyle(color: Colors.white70)),
+      );
+    }
+  }
+
+  Widget _buildContinueLearningSection() {
+    final learningContent = getAllLearningContent();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('📚 Continue Learning', style: AppTextStyles.h2),
+              const Spacer(),
+              TextButton(
+                onPressed: () => setState(() => _selectedCategory = 'Coding Practice'),
+                child: const Text('View All'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...learningContent.map((content) => ContinueLearningCard(
+                title: content.title,
+                category: content.category,
+                videoId: content.videoId,
+                thumbnail: content.thumbnail,
+                channelName: content.channelName,
+                onTap: () async {
+                  final url = Uri.parse(content.watchUrl);
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url);
+                  }
+                },
+              )),
+          const SizedBox(height: 24),
+          // Category shortcuts
+          Text('Learning Paths', style: AppTextStyles.h2),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    _showLearningCategory('DSA');
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6B5CE7).withOpacity(0.2),
+                      border: Border.all(color: const Color(0xFF6B5CE7)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('💻 DSA', style: TextStyle(fontSize: 24)),
+                        const SizedBox(height: 8),
+                        Text('${dsaLearningContent.length} courses',
+                            style: AppTextStyles.small),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    _showLearningCategory('AI');
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF6B6B).withOpacity(0.2),
+                      border: Border.all(color: const Color(0xFFFF6B6B)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('🤖 AI', style: TextStyle(fontSize: 24)),
+                        const SizedBox(height: 8),
+                        Text('${aiLearningContent.length} courses',
+                            style: AppTextStyles.small),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    _showLearningCategory('ML');
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4ECDC4).withOpacity(0.2),
+                      border: Border.all(color: const Color(0xFF4ECDC4)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('📊 ML', style: TextStyle(fontSize: 24)),
+                        const SizedBox(height: 8),
+                        Text('${mlLearningContent.length} courses',
+                            style: AppTextStyles.small),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 100),
+        ],
+      ),
+    );
+  }
 
-                    // ── Problem List ──────────────────────
-                    ...filtered.asMap().entries.map((entry) {
-                      final i = entry.key;
-                      final problem = entry.value;
-                      return FadeInUp(
-                        delay: Duration(milliseconds: i * 50),
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: GlassCard(
-                            onTap: () => context.push('/code-editor/${problem.id}'),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.purple.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Center(
-                                    child: Icon(Icons.code, color: AppColors.purple, size: 20),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(problem.title, style: AppTextStyles.h3),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.people_outline, color: AppColors.textHint, size: 12),
-                                          const SizedBox(width: 4),
-                                          Text('125.4k solved', style: AppTextStyles.small.copyWith(fontSize: 10)),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    _DifficultyBadge(difficulty: problem.difficulty),
-                                    const SizedBox(height: 4),
-                                    Text('+${problem.coins} XP', style: AppTextStyles.small.copyWith(color: AppColors.blue, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                    const SizedBox(height: 100),
-                  ],
+  void _showLearningCategory(String category) {
+    final content = getLearningByCategory(category);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.95,
+        builder: (_, controller) => Column(
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white30,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Text(
+                    category == 'DSA'
+                        ? '💻 DSA Courses'
+                        : category == 'AI'
+                            ? '🤖 AI Courses'
+                            : '📊 ML Courses',
+                    style: AppTextStyles.h2.copyWith(color: Colors.white),
+                  ),
+                  const Spacer(),
+                  Text('${content.length} courses',
+                      style:
+                          AppTextStyles.small.copyWith(color: Colors.white54)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                controller: controller,
+                itemCount: content.length,
+                itemBuilder: (_, i) => ContinueLearningCard(
+                  title: content[i].title,
+                  category: content[i].category,
+                  videoId: content[i].videoId,
+                  thumbnail: content[i].thumbnail,
+                  channelName: content[i].channelName,
+                  onTap: () async {
+                    final url = Uri.parse(content[i].watchUrl);
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url);
+                      Navigator.pop(context);
+                    }
+                  },
                 ),
               ),
             ),
@@ -206,82 +504,389 @@ class PracticeScreen extends ConsumerWidget {
       ),
     );
   }
-}
 
-class _FeaturedProblemCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String difficulty;
-  final String acceptance;
-  final String imageUrl;
+  Widget _buildCodingPracticeContent() {
+    final filteredProblems =
+        ref.watch(filteredProblemsProvider);
+    final solvedProblems = ref.watch(solvedProblemsProvider);
 
-  const _FeaturedProblemCard({
-    required this.title,
-    required this.subtitle,
-    required this.difficulty,
-    required this.acceptance,
-    required this.imageUrl,
-  });
+    if (_isLoadingProblems) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 180,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        image: DecorationImage(
-          image: NetworkImage(imageUrl),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.6), BlendMode.darken),
-        ),
+    if (filteredProblems.isEmpty) {
+      return const Center(
+        child: Text('No problems found',
+            style: TextStyle(color: Colors.white70)),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Difficulty filters
+          Row(
+            children: [
+              Text('Filter by Difficulty',
+                  style: AppTextStyles.h3),
+              const Spacer(),
+              ..._buildDifficultyChips(),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Problem list
+          ...filteredProblems.asMap().entries.map((entry) {
+            final index = entry.key;
+            final problem = entry.value;
+            final isSolved =
+                solvedProblems.contains(problem.id);
+            return FadeInUp(
+              delay: Duration(milliseconds: index * 50),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: ProblemCard(
+                  problem: problem,
+                  isSolved: isSolved,
+                  onTap: () => context.push(
+                    '/practice/problem/${problem.titleSlug}',
+                  ),
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 100),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    );
+  }
+
+  Widget _buildAlgorithmsContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: algorithmTopics
+            .map((topic) => AlgoTopicCard(
+                  topic: topic,
+                  onSubtopicTap: (subtopic) {
+                    _handleVoiceCommand('explain $subtopic');
+                  },
+                  onGFGTap: () async {
+                    if (await canLaunchUrl(
+                        Uri.parse(topic.gfgUrl))) {
+                      await launchUrl(Uri.parse(
+                          topic.gfgUrl));
+                    }
+                  },
+                  onVideosTap: () async {
+                    final videos = await YouTubeService()
+                        .searchConceptVideos(topic.name);
+                    if (mounted && videos.isNotEmpty) {
+                      _showVideosSheet(videos);
+                    }
+                  },
+                ))
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _buildDataStructuresContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: dataStructureTopics
+            .map((topic) => Container(
+                  margin: const EdgeInsets.symmetric(
+                      horizontal: 0, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1550),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ExpansionTile(
+                    leading: Text(
+                      topic.icon,
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                    title: Text(
+                      topic.name,
+                      style: AppTextStyles.h3
+                          .copyWith(color: Colors.white),
+                    ),
+                    trailing: Text(
+                      '${topic.problems.length} problems',
+                      style: AppTextStyles.small
+                          .copyWith(color: Colors.white54),
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: topic.problems
+                                  .map((problem) =>
+                                  ActionChip(
+                                    label: Text(
+                                      problem,
+                                      style: const TextStyle(
+                                          color: Colors
+                                              .white),
+                                    ),
+                                    backgroundColor:
+                                        const Color(
+                                            0xFF2D2070),
+                                    onPressed: () {
+                                      ref
+                                          .read(searchQueryProvider
+                                              .notifier)
+                                          .state =
+                                          problem;
+                                    },
+                                  ))
+                                  .toList(),
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: () async {
+                                if (await canLaunchUrl(
+                                    Uri.parse(
+                                        topic.gfgUrl))) {
+                                  await launchUrl(Uri
+                                      .parse(topic
+                                          .gfgUrl));
+                                }
+                              },
+                              child: const Text(
+                                  'Learn More'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _buildDBMSContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: dbmsTopics
+            .map((topic) => Container(
+                  margin: const EdgeInsets.symmetric(
+                      horizontal: 0, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1550),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ExpansionTile(
+                    leading: Text(
+                      topic.icon,
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                    title: Text(
+                      topic.name,
+                      style: AppTextStyles.h3
+                          .copyWith(color: Colors.white),
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Text('Concepts',
+                                style: AppTextStyles.h3),
+                            const SizedBox(
+                                height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: topic.concepts
+                                  .map((concept) =>
+                                  ActionChip(
+                                    label: Text(
+                                      concept,
+                                      style: const TextStyle(
+                                          color: Colors
+                                              .white),
+                                    ),
+                                    backgroundColor:
+                                        const Color(
+                                            0xFF2D2070),
+                                    onPressed: () {
+                                      _handleVoiceCommand(
+                                          'explain $concept');
+                                    },
+                                  ))
+                                  .toList(),
+                            ),
+                            if (topic.sqlProblems
+                                .isNotEmpty) ...[
+                              const SizedBox(
+                                  height: 16),
+                              Text('Practice Problems',
+                                  style:
+                                      AppTextStyles
+                                          .h3),
+                              const SizedBox(
+                                  height: 8),
+                              ...topic.sqlProblems
+                                  .map((problem) =>
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets
+                                            .symmetric(
+                                            vertical:
+                                                4),
+                                    child: Text(
+                                      '• ${problem.title}',
+                                      style: AppTextStyles
+                                          .body
+                                          .copyWith(
+                                          color: Colors
+                                              .white70),
+                                    ),
+                                  )),
+                            ],
+                            const SizedBox(
+                                height: 12),
+                            ElevatedButton(
+                              onPressed: () async {
+                                if (await canLaunchUrl(
+                                    Uri.parse(
+                                        topic.gfgUrl))) {
+                                  await launchUrl(Uri
+                                      .parse(topic
+                                          .gfgUrl));
+                                }
+                              },
+                              child: const Text(
+                                  'Learn on GFG'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
+
+  List<Widget> _buildDifficultyChips() {
+    final selectedFilter =
+        ref.watch(difficultyFilterProvider);
+    return ['All', 'Easy', 'Medium', 'Hard']
+        .map((difficulty) => Padding(
+              padding:
+                  const EdgeInsets.only(left: 8),
+              child: GestureDetector(
+                onTap: () {
+                  ref
+                      .read(
+                          difficultyFilterProvider
+                              .notifier)
+                      .state = difficulty;
+                },
+                child: Text(
+                  difficulty,
+                  style: AppTextStyles.small
+                      .copyWith(
+                    color: selectedFilter ==
+                            difficulty
+                        ? AppColors.purple
+                        : AppColors.textHint,
+                    fontWeight: selectedFilter ==
+                            difficulty
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ))
+        .toList();
+  }
+
+  void _showVideosSheet(List<YouTubeVideo> videos) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.95,
+        builder: (_, controller) => Column(
           children: [
-            Row(
-              children: [
-                _DifficultyBadge(difficulty: difficulty),
-                const SizedBox(width: 8),
-                Text('$acceptance Acceptance', style: AppTextStyles.small.copyWith(color: Colors.white70)),
-              ],
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white30,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            const Spacer(),
-            Text(title, style: AppTextStyles.display.copyWith(fontSize: 24)),
-            const SizedBox(height: 4),
-            Text(subtitle, style: AppTextStyles.body.copyWith(color: Colors.white70)),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(Icons.play_circle_fill,
+                      color: Colors.red),
+                  const SizedBox(width: 8),
+                  Text('Video Explanations',
+                      style: AppTextStyles.h2
+                          .copyWith(color: Colors.white)),
+                  const Spacer(),
+                  Text('${videos.length} videos',
+                      style: AppTextStyles.small
+                          .copyWith(
+                              color: Colors.white54)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                controller: controller,
+                itemCount: videos.length,
+                itemBuilder: (_, i) => VideoCard(
+                  video: videos[i],
+                  onTap: () async {
+                    final url =
+                        Uri.parse(videos[i].watchUrl);
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url);
+                    }
+                  },
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-}
-
-class _DifficultyBadge extends StatelessWidget {
-  final String difficulty;
-  const _DifficultyBadge({required this.difficulty});
 
   @override
-  Widget build(BuildContext context) {
-    final color = difficulty == 'Hard' 
-      ? AppColors.red 
-      : difficulty == 'Medium' 
-        ? AppColors.orange 
-        : AppColors.green;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.5)),
-      ),
-      child: Text(
-        difficulty,
-        style: AppTextStyles.small.copyWith(color: color, fontWeight: FontWeight.bold, fontSize: 10),
-      ),
-    );
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }

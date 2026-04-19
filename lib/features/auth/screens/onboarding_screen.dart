@@ -334,7 +334,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           children: [
             Text(title, style: AppTextStyles.body.copyWith(color: Colors.white, fontWeight: FontWeight.w500)),
             const SizedBox(width: 8),
-            Icon(Icons.add, size: 14, color: AppColors.textHint),
+            const Icon(Icons.add, size: 14, color: AppColors.textHint),
           ],
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -7,129 +8,131 @@ import '../../../core/widgets/gradient_button.dart';
 import '../../../core/widgets/gradient_text.dart';
 import '../../../core/widgets/coin_badge.dart';
 import '../../../core/utils/helpers.dart';
+import '../../../models/reward_item_model.dart';
+import '../../gamification/notifiers/points_notifier.dart';
 
-class SwagStoreScreen extends StatefulWidget {
+class SwagStoreScreen extends ConsumerStatefulWidget {
   const SwagStoreScreen({super.key});
 
   @override
-  State<SwagStoreScreen> createState() => _SwagStoreScreenState();
+  ConsumerState<SwagStoreScreen> createState() => _SwagStoreScreenState();
 }
 
-class _SwagStoreScreenState extends State<SwagStoreScreen> {
-  int _coins = 1200;
+class _SwagStoreScreenState extends ConsumerState<SwagStoreScreen> {
+  RewardCategory _selectedCategory = RewardCategory.swag;
 
-  final _items = [
-    {'name': 'CodeCraft T-Shirt', 'emoji': '👕', 'price': 500, 'desc': 'Premium cotton tee with CodeCraft logo'},
-    {'name': 'Sticker Pack', 'emoji': '🎨', 'price': 100, 'desc': '10 coding stickers for your laptop'},
-    {'name': 'Premium Badge', 'emoji': '🏆', 'price': 300, 'desc': 'Gold profile badge - show off your status'},
-    {'name': 'Custom Theme', 'emoji': '🎨', 'price': 200, 'desc': 'Unlock exclusive app themes'},
-    {'name': 'Coffee Mug', 'emoji': '☕', 'price': 400, 'desc': 'CodeCraft branded developer mug'},
-    {'name': 'GitHub Pro', 'emoji': '💻', 'price': 800, 'desc': '1 month GitHub Pro subscription'},
-    {'name': 'Notebook', 'emoji': '📓', 'price': 250, 'desc': 'Premium coding notebook'},
-    {'name': 'Hoodie', 'emoji': '🧥', 'price': 1000, 'desc': 'CodeCraft developer hoodie'},
-  ];
+  @override
+  Widget build(BuildContext context) {
+    final pointsState = ref.watch(pointsNotifierProvider);
+    final filteredRewards = pointsState.rewards
+        .where((r) => r.category == _selectedCategory)
+        .toList();
 
-  void _redeem(Map<String, dynamic> item) {
-    final price = item['price'] as int;
-    if (_coins < price) {
-      Helpers.showToast(context, 'Not enough coins! 😅', isError: true);
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Redeem ${item['name']}?', style: AppTextStyles.h2),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(item['emoji'] as String, style: const TextStyle(fontSize: 48)),
-            const SizedBox(height: 12),
-            Text('This will cost $price coins', style: AppTextStyles.body),
-            const SizedBox(height: 8),
-            CoinBadge(coins: _coins, large: true),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      body: CustomScrollView(
+        slivers: [
+          _buildAppBar(pointsState.balance),
+          SliverToBoxAdapter(
+            child: _buildCategoryList(),
           ),
-          TextButton(
-            onPressed: () {
-              setState(() => _coins -= price);
-              Navigator.pop(ctx);
-              Helpers.showToast(context, '🎉 Redeemed ${item['name']}!');
-            },
-            child: const Text('Redeem', style: TextStyle(color: AppColors.green)),
-          ),
+          if (pointsState.isLoading)
+            const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (filteredRewards.isEmpty)
+            SliverFillRemaining(
+              child: Center(
+                child: Text('No items in this category yet!',
+                    style: AppTextStyles.body),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 0.7,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final item = filteredRewards[index];
+                    return FadeInUp(
+                      delay: Duration(milliseconds: index * 50),
+                      child: _RewardCard(item: item),
+                    );
+                  },
+                  childCount: filteredRewards.length,
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget _buildAppBar(int balance) {
+    return SliverAppBar(
+      expandedHeight: 120,
       backgroundColor: AppColors.bg,
-      appBar: AppBar(
-        backgroundColor: AppColors.bg,
-        title: GradientText(
-          text: '🏪 Swag Store',
-          style: AppTextStyles.h2,
+      pinned: true,
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+        title: Row(
+          children: [
+            GradientText(
+              text: 'Student Store',
+              style: AppTextStyles.h2.copyWith(fontSize: 20),
+            ),
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: CoinBadge(coins: balance, large: true),
+            ),
+          ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CoinBadge(coins: _coins, large: true),
-          ),
-        ],
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.75,
-        ),
-        itemCount: _items.length,
-        itemBuilder: (_, i) {
-          final item = _items[i];
-          final canAfford = _coins >= (item['price'] as int);
-          return FadeInUp(
-            delay: Duration(milliseconds: i * 60),
-            child: GlassCard(
-              borderColor: canAfford
-                  ? AppColors.green.withOpacity(0.2)
-                  : AppColors.border,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(item['emoji'] as String,
-                      style: const TextStyle(fontSize: 36)),
-                  const SizedBox(height: 10),
-                  Text(item['name'] as String,
-                      style: AppTextStyles.h3.copyWith(fontSize: 13),
-                      textAlign: TextAlign.center,
-                      maxLines: 2),
-                  const SizedBox(height: 4),
-                  Text(item['desc'] as String,
-                      style: AppTextStyles.small.copyWith(fontSize: 9),
-                      textAlign: TextAlign.center,
-                      maxLines: 2),
-                  const SizedBox(height: 10),
-                  CoinBadge(coins: item['price'] as int),
-                  const SizedBox(height: 8),
-                  GradientButton(
-                    label: canAfford ? 'Redeem' : 'Locked',
-                    small: true,
-                    disabled: !canAfford,
-                    onTap: canAfford ? () => _redeem(item) : null,
+    );
+  }
+
+  Widget _buildCategoryList() {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: RewardCategory.values.length,
+        itemBuilder: (context, index) {
+          final category = RewardCategory.values[index];
+          final isSelected = _selectedCategory == category;
+          final name = category.toString().split('.').last.toUpperCase();
+
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCategory = category),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: isSelected ? AppColors.gradPurpleBlue : null,
+                color: isSelected ? null : AppColors.bgCard,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: isSelected ? Colors.transparent : AppColors.border,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  name,
+                  style: AppTextStyles.small.copyWith(
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    fontWeight: FontWeight.bold,
                   ),
-                ],
+                ),
               ),
             ),
           );
@@ -138,3 +141,100 @@ class _SwagStoreScreenState extends State<SwagStoreScreen> {
     );
   }
 }
+
+class _RewardCard extends ConsumerWidget {
+  final RewardItem item;
+  const _RewardCard({required this.item});
+
+  void _showRedeemDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(item.emoji, style: const TextStyle(fontSize: 64)),
+            const SizedBox(height: 16),
+            Text(item.name, style: AppTextStyles.h2, textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            Text(item.description,
+                style: AppTextStyles.body, textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Cost: ', style: AppTextStyles.body),
+                CoinBadge(coins: item.pointsPrice, large: true),
+              ],
+            ),
+            const SizedBox(height: 24),
+            GradientButton(
+              label: 'Confirm Redemption',
+              onTap: () async {
+                final success = await ref
+                    .read(pointsNotifierProvider.notifier)
+                    .redeemReward(item, 'currentUser');
+                
+                if (success) {
+                  Navigator.pop(ctx);
+                  Helpers.showToast(context, '🎉 Successfully redeemed ${item.name}!');
+                } else {
+                  Helpers.showToast(context, '❌ Not enough coins!', isError: true);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final balance = ref.watch(pointsNotifierProvider).balance;
+    final canAfford = balance >= item.pointsPrice;
+
+    return GlassCard(
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Center(
+                child: Text(item.emoji, style: const TextStyle(fontSize: 48)),
+              ),
+            ),
+            Text(
+              item.name,
+              style: AppTextStyles.h3.copyWith(fontSize: 14),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              item.description,
+              style: AppTextStyles.small.copyWith(fontSize: 10, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+            CoinBadge(coins: item.pointsPrice),
+            const SizedBox(height: 12),
+            GradientButton(
+              label: canAfford ? 'Redeem' : 'Locked',
+              small: true,
+              disabled: !canAfford,
+              onTap: () => _showRedeemDialog(context, ref),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

@@ -46,6 +46,9 @@ class VoiceService {
           }
         },
         localeId: localeId,
+        listenFor: const Duration(seconds: 3),
+        pauseFor: const Duration(seconds: 3),
+        partialResults: true,
       );
     } catch (e) {
       print('Listen error: $e');

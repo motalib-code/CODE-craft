@@ -48,6 +48,25 @@ A complete, production-ready Flutter app that runs on Android phones and all maj
 
 ---
 
+## 💻 Practice & Resources
+
+### Competitive Programming Platforms
+- **[LeetCode](https://www.leetcode.com)** - 2500+ coding problems for interview prep
+- **[CodeChef](https://www.codechef.com/)** - Competitive programming with live contests
+- **[HackerRank](https://www.hackerrank.com/)** - Interview preparation kit with tutorials
+- **[Codeforces](https://codeforces.com/)** - Community-driven competitive programming
+- **[HackerEarth](https://www.hackerearth.com/)** - Coding challenges & hackathons
+- **[InterviewBit](https://www.interviewbit.com/)** - DSA interview questions & curated paths
+- **[Codewars](https://www.codewars.com/)** - Gamified coding challenges (8 kyu to 1 kyu)
+
+### Learning Resources
+- **[GeeksforGeeks](https://www.geeksforgeeks.org/)** - Tutorials & DSA explanations
+- **[freeCodeCamp](https://www.freecodecamp.org/)** - Free full-length courses
+- **[Educative](https://www.educative.io/)** - Text-based interactive learning
+- **[System Design Interview](https://www.systemdesigninterview.com/)** - Prepare for system design rounds
+
+---
+
 ## 🏗️ Tech Stack
 
 - **Flutter 3.x** - Cross-platform UI

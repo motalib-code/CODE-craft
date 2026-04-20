@@ -66,12 +66,22 @@ class YouTubeService {
     }
   }
 
+  Future<List<YouTubeVideo>> searchSolutions(dynamic problem) async {
+    final String query = '${problem.id} ${problem.title} leetcode solution';
+    return searchVideos(query, maxResults: 12);
+  }
+
+  Future<List<YouTubeVideo>> searchConcept(String concept) async {
+    final String query = '$concept algorithm explained tutorial';
+    return searchVideos(query, maxResults: 10);
+  }
+
   Future<List<YouTubeVideo>> searchConceptVideos(String concept) async {
-    return searchVideos('$concept explained tutorial');
+    return searchConcept(concept);
   }
 
   Future<List<YouTubeVideo>> searchSolutionVideos(String problemTitle) async {
-    return searchVideos('$problemTitle solution');
+    return searchVideos('$problemTitle leetcode solution');
   }
 
   String getWatchUrl(String videoId) => 'https://www.youtube.com/watch?v=$videoId';

@@ -1,549 +1,418 @@
+import 'package:code_text_field/code_text_field.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
+import 'package:highlight/languages/cpp.dart' as cpp;
+import 'package:highlight/languages/java.dart' as java;
+import 'package:highlight/languages/javascript.dart' as js;
+import 'package:highlight/languages/python.dart' as py;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:shimmer/shimmer.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_text_styles.dart';
-import '../../../models/leetcode_problem.dart';
+
+import '../../../data/lc_problems_data.dart';
+import '../../../models/lc_problem.dart';
 import '../../../models/youtube_video.dart';
-import '../../../providers/problems_provider.dart';
-import '../../../providers/xp_provider.dart';
-import '../../../services/leetcode_service.dart';
-import '../../../services/practice_gemini_service.dart';
+import '../../../services/gemini_service.dart';
 import '../../../services/youtube_service.dart';
-import '../../widgets/practice/video_card.dart';
 
-class ProblemDetailScreen extends ConsumerStatefulWidget {
-  final String problemSlug;
-
+class ProblemDetailScreen extends StatefulWidget {
   const ProblemDetailScreen({
     super.key,
     required this.problemSlug,
+    this.problem,
   });
 
+  final String problemSlug;
+  final LCProblem? problem;
+
   @override
-  ConsumerState<ProblemDetailScreen> createState() => _ProblemDetailScreenState();
+  State<ProblemDetailScreen> createState() => _ProblemDetailScreenState();
 }
 
-class _ProblemDetailScreenState extends ConsumerState<ProblemDetailScreen>
+class _ProblemDetailScreenState extends State<ProblemDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  LeetCodeProblem? _problem;
-  bool _isLoading = true;
-  Map<String, dynamic> _aiExplanation = {};
-  bool _isSolved = false;
+  late LCProblem _problem;
+  final PracticeGeminiService _gemini = PracticeGeminiService();
+  final YouTubeService _youtube = YouTubeService();
+
+  bool _loading = true;
+  String _language = 'Python';
+  late CodeController _codeController;
+  Map<String, dynamic>? _review;
+  Map<String, dynamic>? _explain;
+  List<YouTubeVideo> _videos = <YouTubeVideo>[];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _loadProblem();
+    _tabController = TabController(length: 4, vsync: this);
+    _codeController = CodeController(text: '', language: py.python);
+    _init();
   }
 
-  Future<void> _loadProblem() async {
-    try {
-      final problem = await LeetCodeService().fetchProblemDetail(widget.problemSlug);
-      if (mounted) {
-        setState(() {
-          _problem = problem;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error loading problem: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+  Future<void> _init() async {
+    _problem = widget.problem ??
+        allProblems.firstWhere(
+          (p) => p.id.toString() == widget.problemSlug,
+          orElse: () => allProblems.first,
+        );
+    await _loadSavedCode();
+    _videos = await _youtube.searchSolutions(_problem);
+    if (mounted) {
+      setState(() => _loading = false);
     }
   }
 
-  Future<void> _loadAIExplanation() async {
-    if (_problem == null) return;
-    try {
-      final explanation = await PracticeGeminiService().explainProblem(
-        title: _problem!.title,
-        difficulty: _problem!.difficulty,
-        tags: _problem!.tags,
-      );
-      if (mounted) {
-        setState(() => _aiExplanation = explanation);
-      }
-      _showAIExplanationSheet();
-    } catch (e) {
-      print('Error getting AI explanation: $e');
+  String _codeKey() => 'code_${_problem.id}_${_language.toLowerCase()}';
+
+  Future<void> _loadSavedCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString(_codeKey()) ?? _defaultTemplate();
+    _codeController.text = code;
+  }
+
+  String _defaultTemplate() {
+    switch (_language) {
+      case 'Java':
+        return 'class Solution {\n  public Object solve() {\n    return null;\n  }\n}';
+      case 'C++':
+        return 'class Solution {\npublic:\n  int solve() {\n    return 0;\n  }\n};';
+      case 'JavaScript':
+        return 'function solve() {\n  return null;\n}';
+      default:
+        return 'def solve():\n    return None';
     }
   }
 
-  void _showAIExplanationSheet() {
-    if (_aiExplanation.isEmpty) return;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.bg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        maxChildSize: 0.95,
-        builder: (_, controller) => Column(
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white30,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                controller: controller,
-                padding: const EdgeInsets.all(16),
-                children: [
-                  Text('🎯 What\'s Asked',
-                      style:
-                          AppTextStyles.h2.copyWith(color: Colors.white)),
-                  const SizedBox(height: 8),
-                  Text(_aiExplanation['whatIsAsked'] ?? '',
-                      style: AppTextStyles.body.copyWith(color: Colors.white70)),
-                  const SizedBox(height: 20),
-                  Text('💡 Approach',
-                      style:
-                          AppTextStyles.h2.copyWith(color: Colors.white)),
-                  const SizedBox(height: 8),
-                  Text(_aiExplanation['approach'] ?? '',
-                      style: AppTextStyles.body.copyWith(color: Colors.white70)),
-                  const SizedBox(height: 20),
-                  Text('🛠️ Data Structure/Algorithm',
-                      style:
-                          AppTextStyles.h2.copyWith(color: Colors.white)),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.purple.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(_aiExplanation['dataStructure'] ?? '',
-                        style: AppTextStyles.body
-                            .copyWith(color: AppColors.purple)),
-                  ),
-                  const SizedBox(height: 20),
-                  Text('⏱️ Complexity',
-                      style:
-                          AppTextStyles.h2.copyWith(color: Colors.white)),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Time:',
-                                style: TextStyle(color: Colors.white70)),
-                            Text(_aiExplanation['timeComplexity'] ?? '',
-                                style: AppTextStyles.h3
-                                    .copyWith(color: AppColors.purple)),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Space:',
-                                style: TextStyle(color: Colors.white70)),
-                            Text(_aiExplanation['spaceComplexity'] ?? '',
-                                style: AppTextStyles.h3
-                                    .copyWith(color: AppColors.purple)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Text('⚠️ Common Mistakes',
-                      style:
-                          AppTextStyles.h2.copyWith(color: Colors.white)),
-                  const SizedBox(height: 8),
-                  ...((_aiExplanation['commonMistakes'] as List?) ?? [])
-                      .map((mistake) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              children: [
-                                const Text('•',
-                                    style:
-                                        TextStyle(color: Colors.red, fontSize: 20)),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(mistake,
-                                      style: AppTextStyles.body.copyWith(
-                                          color: Colors.white70)),
-                                ),
-                              ],
-                            ),
-                          )),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  dynamic _langDef() {
+    switch (_language) {
+      case 'Java':
+        return java.java;
+      case 'C++':
+        return cpp.cpp;
+      case 'JavaScript':
+        return js.javascript;
+      default:
+        return py.python;
+    }
   }
 
-  void _markAsSolved() {
-    if (_problem == null) return;
-
-    final xpNotifier = ref.read(xpProvider.notifier);
-    xpNotifier.addXP(_problem!.xpReward);
-
-    ref.read(solvedProblemsProvider.notifier).markAsSolved(_problem!.id);
-
+  Future<void> _saveCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_codeKey(), _codeController.text);
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('+${_problem!.xpReward} XP earned! 🎉'),
-        duration: const Duration(seconds: 3),
-      ),
+      const SnackBar(content: Text('Code saved locally')),
     );
+  }
 
-    setState(() => _isSolved = true);
+  Future<void> _copyCode() async {
+    await Clipboard.setData(ClipboardData(text: _codeController.text));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Code copied')),
+    );
+  }
+
+  Future<void> _resetCode() async {
+    setState(() {
+      _codeController.text = _defaultTemplate();
+    });
+  }
+
+  Future<void> _openLeetCode() async {
+    await launchUrl(Uri.parse(_problem.lcUrl), mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _reviewCode() async {
+    final result = await _gemini.reviewCode(_codeController.text, _language, _problem);
+    if (!mounted) return;
+    setState(() {
+      _review = result;
+      _tabController.animateTo(2);
+    });
+  }
+
+  Future<void> _explainProblem() async {
+    final result = await _gemini.explainProblem(_problem);
+    if (!mounted) return;
+    setState(() {
+      _explain = result;
+      _tabController.animateTo(2);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: AppColors.bg,
-        appBar: AppBar(backgroundColor: AppColors.bg),
-        body: Center(
-          child: Shimmer.fromColors(
-            baseColor: Colors.grey[800]!,
-            highlightColor: Colors.grey[700]!,
-            child: Container(
-              margin: const EdgeInsets.all(20),
-              height: 200,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (_problem == null) {
-      return Scaffold(
-        backgroundColor: AppColors.bg,
-        appBar: AppBar(backgroundColor: AppColors.bg),
-        body: const Center(
-          child: Text('Problem not found'),
-        ),
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF1A1033),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: const Color(0xFF1A1033),
       appBar: AppBar(
-        backgroundColor: AppColors.bg,
-        title: Text(_problem!.title, style: AppTextStyles.h2),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.bookmark),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () {},
-          ),
+        backgroundColor: const Color(0xFF1A1033),
+        title: Text('#${_problem.id} ${_problem.title}'),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: const Color(0xFF6B5CE7),
+          tabs: const [
+            Tab(text: 'Problem'),
+            Tab(text: 'Code Editor'),
+            Tab(text: 'AI Help'),
+            Tab(text: 'Videos'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildProblemTab(),
+          _buildCodeEditorTab(),
+          _buildAiTab(),
+          _buildVideosTab(),
         ],
       ),
-      body: DefaultTabController(
-        length: 2,
-        child: Column(
-          children: [
-            // Difficulty and tags
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _getDifficultyColor(_problem!.difficulty),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _problem!.difficulty,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    children: _problem!.tags
-                        .map((tag) => Chip(
-                              label: Text(tag),
-                              backgroundColor: AppColors.purple
-                                  .withOpacity(0.2),
-                              labelStyle:
-                                  const TextStyle(color: AppColors.purple),
-                            ))
-                        .toList(),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Text('✅ ${_problem!.acceptanceRate.toStringAsFixed(1)}%',
-                          style: AppTextStyles.body
-                              .copyWith(color: Colors.white70)),
-                      const SizedBox(width: 16),
-                      Text('❤️ ${_problem!.likes}',
-                          style: AppTextStyles.body
-                              .copyWith(color: Colors.white70)),
-                      const SizedBox(width: 16),
-                      Text('👎 ${_problem!.dislikes}',
-                          style: AppTextStyles.body
-                              .copyWith(color: Colors.white70)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Tabs
-            TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(icon: Icon(Icons.description), text: 'Problem'),
-                Tab(icon: Icon(Icons.school), text: 'Learn'),
-              ],
-              indicatorColor: AppColors.purple,
-              labelColor: AppColors.purple,
-              unselectedLabelColor: Colors.white38,
-            ),
-            // Tab content
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  // Problem tab
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Problem Description',
-                            style: AppTextStyles.h2),
-                        const SizedBox(height: 12),
-                        Text(_problem!.content ?? 'Description not available',
-                            style: AppTextStyles.body
-                                .copyWith(color: Colors.white70)),
-                        const SizedBox(height: 24),
-                        if (_problem!.exampleTestcases != null &&
-                            _problem!.exampleTestcases!.isNotEmpty) ...[
-                          Text('Examples', style: AppTextStyles.h2),
-                          const SizedBox(height: 12),
-                          ..._problem!.exampleTestcases!
-                              .map((example) => Container(
-                                    padding: const EdgeInsets.all(12),
-                                    margin:
-                                        const EdgeInsets.only(bottom: 8),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF2D2070),
-                                      borderRadius:
-                                          BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      example,
-                                      style: const TextStyle(
-                                        fontFamily: 'monospace',
-                                        color: Colors.white70,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  )),
-                        ],
-                        const SizedBox(height: 24),
-                        // Action buttons
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.auto_awesome),
-                            label: const Text('AI Explain This Problem'),
-                            onPressed: _loadAIExplanation,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.purple,
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.play_circle_fill),
-                            label: const Text('Watch Solution on YouTube'),
-                            onPressed: () async {
-                              final videos = await YouTubeService()
-                                  .searchSolutionVideos(
-                                      _problem!.title);
-                              if (videos.isNotEmpty) {
-                                _showVideosSheet(videos);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red.withOpacity(0.2),
-                              foregroundColor: Colors.red,
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _markAsSolved,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green
-                                  .withOpacity(_isSolved ? 0.5 : 1),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 12),
-                            ),
-                            child: Text(
-                              _isSolved
-                                  ? '✅ Marked as Solved'
-                                  : '✅ Mark as Solved',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Learn tab
-                  FutureBuilder<List<YouTubeVideo>>(
-                    future: YouTubeService()
-                        .searchConceptVideos(
-                            _problem!.tags.first),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(
-                            child: CircularProgressIndicator());
-                      }
-                      final videos = snapshot.data!;
-                      return ListView.builder(
-                        itemCount: videos.length,
-                        itemBuilder: (context, index) => VideoCard(
-                          video: videos[index],
-                          onTap: () async {
-                            final url = Uri.parse(
-                                videos[index].watchUrl);
-                            if (await canLaunchUrl(url)) {
-                              await launchUrl(url);
-                            }
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
-  void _showVideosSheet(List<YouTubeVideo> videos) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.bg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        maxChildSize: 0.95,
-        builder: (_, controller) => Column(
+  Widget _buildProblemTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(_problem.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+        const SizedBox(height: 8),
+        Row(
           children: [
             Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.all(8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.white30,
-                borderRadius: BorderRadius.circular(2),
+                color: _problem.difficulty == 'Easy'
+                    ? const Color(0xFF00B8A9)
+                    : _problem.difficulty == 'Medium'
+                        ? const Color(0xFFFFA116)
+                        : const Color(0xFFFF375F),
+                borderRadius: BorderRadius.circular(8),
               ),
+              child: Text(_problem.difficulty, style: const TextStyle(color: Colors.white)),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  const Icon(Icons.play_circle_fill, color: Colors.red),
-                  const SizedBox(width: 8),
-                  Text('Video Explanations',
-                      style: AppTextStyles.h2.copyWith(color: Colors.white)),
-                  const Spacer(),
-                  Text('${videos.length} videos',
-                      style:
-                          AppTextStyles.small.copyWith(
-                              color: Colors.white54)),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                controller: controller,
-                itemCount: videos.length,
-                itemBuilder: (_, i) => VideoCard(
-                  video: videos[i],
-                  onTap: () async {
-                    final url = Uri.parse(videos[i].watchUrl);
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(url);
-                    }
-                  },
-                ),
-              ),
+            const SizedBox(width: 8),
+            Chip(
+              label: Text(_problem.pattern, style: const TextStyle(color: Colors.white)),
+              backgroundColor: const Color(0xFF6B5CE7).withOpacity(0.3),
             ),
           ],
         ),
+        const SizedBox(height: 14),
+        Text('Phase: ${_problem.phase}', style: const TextStyle(color: Colors.white70)),
+        Text('Topic: ${_problem.topic} / ${_problem.subtopic}', style: const TextStyle(color: Colors.white70)),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 6,
+          children: _problem.companies
+              .map((c) => Chip(
+                    label: Text(c, style: const TextStyle(color: Colors.white, fontSize: 11)),
+                    backgroundColor: Colors.orange.withOpacity(0.25),
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton.icon(
+          onPressed: _openLeetCode,
+          icon: const Icon(Icons.open_in_new),
+          label: const Text('Open on LeetCode'),
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B5CE7)),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton.icon(
+          onPressed: _explainProblem,
+          icon: const Icon(Icons.smart_toy),
+          label: const Text('AI Explain'),
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B5CE7)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCodeEditorTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Row(
+          children: [
+            const Text('Language:', style: TextStyle(color: Colors.white70)),
+            const SizedBox(width: 8),
+            DropdownButton<String>(
+              value: _language,
+              dropdownColor: const Color(0xFF1E1550),
+              style: const TextStyle(color: Colors.white),
+              items: const ['Python', 'Java', 'C++', 'JavaScript']
+                  .map((e) => DropdownMenuItem<String>(value: e, child: Text(e)))
+                  .toList(),
+              onChanged: (value) async {
+                if (value == null) return;
+                setState(() {
+                  _language = value;
+                  _codeController = CodeController(
+                    text: _defaultTemplate(),
+                    language: _langDef(),
+                  );
+                });
+                await _loadSavedCode();
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Container(
+          height: 360,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1550),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF6B5CE7).withOpacity(0.4)),
+          ),
+          child: CodeTheme(
+            data: const CodeThemeData(styles: {}),
+            child: CodeField(
+              controller: _codeController,
+              textStyle: const TextStyle(fontFamily: 'monospace', color: Colors.white),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ElevatedButton(onPressed: _openLeetCode, child: const Text('Run')),
+            ElevatedButton(onPressed: _saveCode, child: const Text('Save')),
+            ElevatedButton(onPressed: _copyCode, child: const Text('Copy')),
+            ElevatedButton(onPressed: _resetCode, child: const Text('Reset')),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1550),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF6B5CE7).withOpacity(0.4)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Code Review', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: _reviewCode,
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B5CE7)),
+                icon: const Icon(Icons.smart_toy),
+                label: const Text('Review My Code'),
+              ),
+            ],
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _buildAiTab() {
+    if (_review == null && _explain == null) {
+      return const Center(
+        child: Text('Tap AI Explain or Review My Code', style: TextStyle(color: Colors.white70)),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        if (_review != null) ...[
+          _infoCard('Correct', '${_review!['correct']}', (_review!['correct'] == true) ? Colors.green : Colors.red),
+          _infoCard('Time Complexity', '${_review!['timeComplexity']}', Colors.teal),
+          _infoCard('Space Complexity', '${_review!['spaceComplexity']}', Colors.teal),
+          _listCard('Issues', (_review!['issues'] as List?)?.map((e) => '$e').toList() ?? <String>[]),
+          _listCard('Improvements', (_review!['improvements'] as List?)?.map((e) => '$e').toList() ?? <String>[]),
+          _infoCard('Better Approach', '${_review!['betterApproach']}', const Color(0xFF6B5CE7)),
+        ],
+        if (_explain != null) ...[
+          _infoCard('What Asked', '${_explain!['whatAsked']}', const Color(0xFF6B5CE7)),
+          _listCard('Approach', (_explain!['approach'] as List?)?.map((e) => '$e').toList() ?? <String>[]),
+          _infoCard('Data Structure', '${_explain!['dataStructure']}', Colors.teal),
+          _infoCard('Time Complexity', '${_explain!['timeComplexity']}', Colors.teal),
+          _infoCard('Space Complexity', '${_explain!['spaceComplexity']}', Colors.teal),
+          _listCard('Common Mistakes', (_explain!['commonMistakes'] as List?)?.map((e) => '$e').toList() ?? <String>[]),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildVideosTab() {
+    if (_videos.isEmpty) {
+      return const Center(child: Text('No videos found', style: TextStyle(color: Colors.white70)));
+    }
+    return ListView.builder(
+      itemCount: _videos.length,
+      itemBuilder: (context, index) {
+        final v = _videos[index];
+        return ListTile(
+          title: Text(v.title, style: const TextStyle(color: Colors.white)),
+          subtitle: Text(v.channelName, style: const TextStyle(color: Colors.white60)),
+          trailing: const Icon(Icons.open_in_new, color: Color(0xFF6B5CE7)),
+          onTap: () => launchUrl(Uri.parse(v.watchUrl), mode: LaunchMode.externalApplication),
+        );
+      },
+    );
+  }
+
+  Widget _infoCard(String title, String value, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1550),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(color: Colors.white70)),
+        ],
       ),
     );
   }
 
-  Color _getDifficultyColor(String difficulty) {
-    switch (difficulty) {
-      case 'Easy':
-        return const Color(0xFF00B8A9);
-      case 'Medium':
-        return const Color(0xFFFFA116);
-      case 'Hard':
-        return const Color(0xFFFF375F);
-      default:
-        return AppColors.purple;
-    }
+  Widget _listCard(String title, List<String> values) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1550),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(color: Color(0xFF6B5CE7), fontWeight: FontWeight.bold)),
+          const SizedBox(height: 6),
+          ...values.map((e) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text('- $e', style: const TextStyle(color: Colors.white70)),
+              )),
+        ],
+      ),
+    );
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _codeController.dispose();
     super.dispose();
   }
 }

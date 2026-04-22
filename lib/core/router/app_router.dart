@@ -29,6 +29,14 @@ import '../../features/community/screens/community_screen.dart';
 import '../../features/offline/screens/offline_sync_screen.dart';
 import '../../screens/career_assistant_shell_screen.dart';
 import '../../screens/resume_checker_screen.dart';
+import '../../screens/mock_interview_setup_screen.dart';
+import '../../screens/jobs_screen.dart';
+import '../../screens/news_screen.dart';
+import '../../screens/smart_insights_screen.dart';
+import '../../screens/leaderboard_screen.dart' as hackathon_leaderboard;
+import '../../screens/placement_predictor_screen.dart';
+import '../../screens/peer_interview_screen.dart';
+import '../../screens/college_dashboard_screen.dart';
 import '../widgets/custom_bottom_nav.dart';
 import '../constants/app_colors.dart';
 
@@ -105,6 +113,22 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => const NoTransitionPage(
               child: ProfileScreen(),
             ),
+          ),
+          GoRoute(
+            path: '/mock-interview-setup',
+            builder: (context, state) => const MockInterviewSetupScreen(),
+          ),
+          GoRoute(
+            path: '/jobs',
+            builder: (context, state) => const JobsScreen(),
+          ),
+          GoRoute(
+            path: '/news',
+            builder: (context, state) => const NewsScreen(),
+          ),
+          GoRoute(
+            path: '/insights',
+            builder: (context, state) => const SmartInsightsScreen(),
           ),
         ],
       ),
@@ -185,6 +209,44 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/resume-checker',
         builder: (context, state) => const ResumeCheckerScreen(),
+      ),
+      // Hackathon Features Routes
+      GoRoute(
+        path: '/hackathon/leaderboard/:collegeCode',
+        builder: (context, state) => hackathon_leaderboard.LeaderboardScreen(
+          userCollegeCode: state.pathParameters['collegeCode'] ?? 'DEFAULT',
+          currentUserId: 'user123', // TODO: Get from auth provider
+        ),
+      ),
+      GoRoute(
+        path: '/hackathon/placement-predictor',
+        builder: (context, state) => const PlacementPredictorScreen(
+          resumeScore: 85,
+          lcSolved: 150,
+          avgInterviewScore: 4.5,
+          xpPoints: 5000,
+          interviewsDone: 8,
+          college: 'IIT Delhi',
+          branch: 'CSE',
+          graduationYear: 2024,
+          skills: ['DSA', 'Web Dev', 'Flutter', 'Databases'],
+          targetRole: 'SDE',
+        ),
+      ),
+      GoRoute(
+        path: '/hackathon/peer-interview',
+        builder: (context, state) => const PeerInterviewScreen(
+          userId: 'user123',
+          userName: 'Student Name',
+          userCollege: 'IIT Delhi',
+        ),
+      ),
+      GoRoute(
+        path: '/hackathon/college-analytics/:collegeCode',
+        builder: (context, state) => CollegeDashboardScreen(
+          collegeCode: state.pathParameters['collegeCode'] ?? 'DEFAULT',
+          isProfessor: false,
+        ),
       ),
     ],
   );

@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
+import '../../../services/notification_service.dart';
+import '../../../screens/mock_interview_setup_screen.dart';
+import '../../../screens/jobs_screen.dart';
+import '../../../screens/news_screen.dart';
+import '../../../screens/smart_insights_screen.dart';
+import '../../../screens/resume_checker_screen.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/widgets/glass_card.dart';
@@ -12,11 +18,29 @@ import '../../../core/utils/helpers.dart';
 import '../notifiers/home_notifier.dart';
 import '../../auth/notifiers/auth_notifier.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService.startNewsPolling(
+        onNewArticle: (_) {
+          if (mounted) setState(() {});
+        },
+        interval: const Duration(hours: 2),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final home = ref.watch(homeNotifierProvider);
     final userData = ref.watch(userDataProvider);
     final userName = userData.value?.name ?? 'Rahul';
@@ -81,6 +105,11 @@ class HomeScreen extends ConsumerWidget {
                         Text('Your journey to mastery continues today.', style: AppTextStyles.body),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 18),
+                  FadeInUp(
+                    delay: const Duration(milliseconds: 120),
+                    child: _buildQuickActionGrid(context),
                   ),
                   const SizedBox(height: 16),
                   FadeInUp(
@@ -301,6 +330,86 @@ class _StatItem extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _buildQuickActionGrid(BuildContext context) {
+  return Column(
+    children: [
+      Row(
+        children: [
+          _buildQuickActionCard(
+            '🎤', 'Mock Interview', 'Practice DSA & behavioral',
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MockInterviewSetupScreen())),
+          ),
+          const SizedBox(width: 12),
+          _buildQuickActionCard(
+            '📄', 'Resume Check', 'AI review & tips',
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ResumeCheckerScreen())),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      Row(
+        children: [
+          _buildQuickActionCard(
+            '💼', 'Jobs', 'Remote + startup roles',
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JobsScreen())),
+          ),
+          const SizedBox(width: 12),
+          _buildQuickActionCard(
+            '📰', 'News', 'Tech & career updates',
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NewsScreen())),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      Row(
+        children: [
+          _buildQuickActionCard(
+            '📊', 'Insights', 'Growth scorecards',
+            () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SmartInsightsScreen())),
+          ),
+          const SizedBox(width: 12),
+          _buildQuickActionCard(
+            '🗺️', 'Roadmap', 'Plan your next steps',
+            () => context.push('/roadmap'),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+Widget _buildQuickActionCard(
+  String emoji,
+  String label,
+  String subtitle,
+  VoidCallback onTap,
+) {
+  return Expanded(
+    child: InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1550),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF6B5CE7).withOpacity(0.3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 32)),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _ContinueLearningCard extends StatelessWidget {

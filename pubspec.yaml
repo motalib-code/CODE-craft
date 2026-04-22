@@ -35,6 +35,8 @@ dependencies:
   # Networking (web+android)
   http: ^1.6.0
   dio: ^5.7.0
+  flutter_local_notifications: ^17.0.0
+  flutter_tts: ^3.8.5
 
   # Storage (web+android)
   shared_preferences: ^2.3.2

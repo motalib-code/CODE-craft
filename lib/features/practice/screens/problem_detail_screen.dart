@@ -41,6 +41,8 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen>
   Map<String, dynamic>? _review;
   Map<String, dynamic>? _explain;
   List<YouTubeVideo> _videos = <YouTubeVideo>[];
+  String? _youtubeSearchLink;
+  String? _trendingInsights;
 
   @override
   void initState() {
@@ -56,10 +58,68 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen>
           (p) => p.id.toString() == widget.problemSlug,
           orElse: () => allProblems.first,
         );
-    await _loadSavedCode();
-    _videos = await _youtube.searchSolutions(_problem);
+    
+    // Load all resources in parallel
+    await Future.wait([
+      _loadSavedCode(),
+      _loadExplanation(),
+      _loadVideos(),
+      _loadYoutubeSearchLink(),
+      _loadTrendingInsights(),
+    ]);
+    
     if (mounted) {
       setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadExplanation() async {
+    try {
+      final explain = await _gemini.explainProblem(_problem);
+      if (mounted && explain.isNotEmpty) {
+        setState(() => _explain = explain);
+      }
+    } catch (e) {
+      print('Error loading explanation: $e');
+    }
+  }
+
+  Future<void> _loadVideos() async {
+    try {
+      final videos = await _youtube.searchSolutions(_problem);
+      if (mounted && videos.isNotEmpty) {
+        setState(() => _videos = videos);
+      }
+    } catch (e) {
+      print('Error loading videos: $e');
+    }
+  }
+
+  Future<void> _loadYoutubeSearchLink() async {
+    try {
+      final link = await _gemini.generateYoutubeSearchLink(
+        problemTitle: _problem.title,
+        difficulty: _problem.difficulty,
+        tags: [_problem.topic, _problem.pattern],
+      );
+      if (mounted && link.isNotEmpty) {
+        setState(() => _youtubeSearchLink = link);
+      }
+    } catch (e) {
+      print('Error generating YouTube link: $e');
+    }
+  }
+
+  Future<void> _loadTrendingInsights() async {
+    try {
+      final insights = await _gemini.researchTrends(
+        topic: '${_problem.topic} DSA patterns and interview trends',
+      );
+      if (mounted && insights.isNotEmpty) {
+        setState(() => _trendingInsights = insights);
+      }
+    } catch (e) {
+      print('Error loading trends: $e');
     }
   }
 
@@ -321,14 +381,92 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen>
 
   Widget _buildAiTab() {
     if (_review == null && _explain == null) {
-      return const Center(
-        child: Text('Tap AI Explain or Review My Code', style: TextStyle(color: Colors.white70)),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(color: Color(0xFF6B5CE7)),
+            const SizedBox(height: 16),
+            const Text('Loading AI Analysis...', style: TextStyle(color: Colors.white70)),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: _explainProblem,
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B5CE7)),
+              icon: const Icon(Icons.smart_toy),
+              label: const Text('Load Explanation Now'),
+            ),
+          ],
+        ),
       );
     }
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // YouTube Search Link Button
+        if (_youtubeSearchLink != null) ...[
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [const Color(0xFF6B5CE7), const Color(0xFF5140AD)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => launchUrl(Uri.parse(_youtubeSearchLink!), mode: LaunchMode.externalApplication),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.video_library, color: Colors.white, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Watch on YouTube', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                            Text('Fast Groq-optimized search', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+        // Trending Insights Section
+        if (_trendingInsights != null && _trendingInsights!.isNotEmpty) ...[
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1550),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF6B5CE7).withOpacity(0.3)),
+            ),
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.trending_up, color: Color(0xFF6B5CE7), size: 20),
+                    const SizedBox(width: 8),
+                    const Text('2024 Trending Insights', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(_trendingInsights!, style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.6)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
         if (_review != null) ...[
           _infoCard('Correct', '${_review!['correct']}', (_review!['correct'] == true) ? Colors.green : Colors.red),
           _infoCard('Time Complexity', '${_review!['timeComplexity']}', Colors.teal),
@@ -351,17 +489,87 @@ class _ProblemDetailScreenState extends State<ProblemDetailScreen>
 
   Widget _buildVideosTab() {
     if (_videos.isEmpty) {
-      return const Center(child: Text('No videos found', style: TextStyle(color: Colors.white70)));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.video_library_outlined, size: 48, color: Colors.white54),
+            const SizedBox(height: 16),
+            const Text('Loading video solutions...', style: TextStyle(color: Colors.white70)),
+            const SizedBox(height: 24),
+            const CircularProgressIndicator(color: Color(0xFF6B5CE7)),
+          ],
+        ),
+      );
     }
+    
     return ListView.builder(
+      padding: const EdgeInsets.all(12),
       itemCount: _videos.length,
       itemBuilder: (context, index) {
         final v = _videos[index];
-        return ListTile(
-          title: Text(v.title, style: const TextStyle(color: Colors.white)),
-          subtitle: Text(v.channelName, style: const TextStyle(color: Colors.white60)),
-          trailing: const Icon(Icons.open_in_new, color: Color(0xFF6B5CE7)),
-          onTap: () => launchUrl(Uri.parse(v.watchUrl), mode: LaunchMode.externalApplication),
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1550),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF6B5CE7).withOpacity(0.2)),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => launchUrl(Uri.parse(v.watchUrl), mode: LaunchMode.externalApplication),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(
+                          image: NetworkImage(v.thumbnail),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.play_circle_filled, color: Colors.white, size: 32),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            v.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            v.channelName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white60, fontSize: 12),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Published: ${v.publishedAt.year}-${v.publishedAt.month.toString().padLeft(2, '0')}-${v.publishedAt.day.toString().padLeft(2, '0')}',
+                            style: const TextStyle(color: Colors.white30, fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.open_in_new, color: Color(0xFF6B5CE7), size: 20),
+                  ],
+                ),
+              ),
+            ),
+          ),
         );
       },
     );

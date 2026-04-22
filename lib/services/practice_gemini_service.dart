@@ -116,4 +116,60 @@ Keep it concise and beginner-friendly.''';
       return '';
     }
   }
+
+  /// Generate optimized YouTube search link using Groq API (ultra-fast)
+  Future<String> generateYoutubeSearchLink({
+    required String problemTitle,
+    required String difficulty,
+    required List<String> tags,
+  }) async {
+    try {
+      final prompt = '''Generate a concise YouTube search query for learning this coding problem.
+Problem: $problemTitle
+Difficulty: $difficulty
+Tags: ${tags.join(', ')}
+
+Respond with ONLY the search query (15-30 characters), no explanation. 
+Example: "Two Sum LeetCode" or "Merge Sorted Arrays"''';
+
+      final response = await http.post(
+        Uri.parse(ApiConfig.groqBaseUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${ApiConfig.groqApiKey}',
+        },
+        body: jsonEncode({
+          'model': ApiConfig.groqModel,
+          'messages': [
+            {
+              'role': 'user',
+              'content': prompt
+            }
+          ],
+          'temperature': 0.2,
+          'max_tokens': 50,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final message = (body['choices'] as List?)?.firstOrNull as Map<String, dynamic>?;
+        final searchQuery = message?['message']?['content']?.toString()?.trim() ?? '';
+        
+        if (searchQuery.isNotEmpty) {
+          final encoded = Uri.encodeComponent(searchQuery);
+          return 'https://www.youtube.com/results?search_query=$encoded';
+        }
+      }
+      
+      // Fallback to basic search
+      final fallback = Uri.encodeComponent('$problemTitle tutorial');
+      return 'https://www.youtube.com/results?search_query=$fallback';
+    } catch (e) {
+      print('YouTube link generation error: $e');
+      // Fallback search
+      final fallback = Uri.encodeComponent('$problemTitle tutorial');
+      return 'https://www.youtube.com/results?search_query=$fallback';
+    }
+  }
 }

@@ -7,6 +7,7 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/storage_service.dart';
 import 'core/constants/app_colors.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,9 @@ void main() async {
 
   // SharedPreferences init
   await StorageService.init();
+
+  await NotificationService.initialize();
+  await NotificationService.scheduleDailyInterviewReminder(hour: 9, minute: 0);
 
   runApp(const ProviderScope(child: CodeCraftApp()));
 }
